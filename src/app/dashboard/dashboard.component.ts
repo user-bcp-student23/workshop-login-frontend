@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import axios from 'axios';
+import { TasksService } from '../services/tasks.service';
+import { SessionService } from '../services/session.service';
+import { getHttpErrorMessage } from '../utils/http-error-message';
 import { formatTaskLabel } from '../utils/legacy-format';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -26,54 +28,58 @@ export class DashboardComponent implements OnInit {
   loading: any = true;
   error: any = '';
 
-  constructor(private router: Router, private cdr: ChangeDetectorRef, private zone: NgZone) {}
+  constructor(
+    private router: Router,
+    private tasksService: TasksService,
+    private session: SessionService,
+    private changeDetector: ChangeDetectorRef
+  ) {}
 
   statusLabel(status: string): string {
     return STATUS_LABELS[(status || '').toUpperCase()] || status;
   }
 
   async ngOnInit(): Promise<void> {
-    const token = localStorage.getItem('workshop_token');
-    this.user = JSON.parse(localStorage.getItem('workshop_user') || '{}');
-    if (!token) {
-      await this.router.navigate(['/login']);
-      return;
-    }
     try {
-      const response: any = await axios.get('http://localhost:8000/api/tasks?owner=' + (this.user.username || ''), {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const tasks = response.data;
+      const session = this.session.read();
+      if (!session) {
+        await this.router.navigate(['/login']);
+        return;
+      }
+      this.user = session.user;
+      const tasks = await this.tasksService.getTasks(this.user.username || '', session.token);
+      if (!Array.isArray(tasks)) {
+        throw new Error('La respuesta de tareas no es un arreglo valido.');
+      }
       const tmp: any[] = [];
       for (let i = 0; i < tasks.length; i++) {
+        if (typeof tasks[i]?.status !== 'string') {
+          throw new Error('La respuesta de tareas contiene un estado no valido.');
+        }
         if (tasks[i].status !== 'ARCHIVED') {
           tasks[i].label = formatTaskLabel(tasks[i]);
           tmp.push(tasks[i]);
         }
       }
       tmp.sort((a: any, b: any) => a.priority > b.priority ? -1 : 1);
-      // axios resuelve a veces fuera de la zona de Angular (más aún llegando
-      // por navegación desde el login): forzamos volver a entrar a la zona
-      // y disparamos detectChanges a mano para no depender de que Angular
-      // lo detecte solo.
-      this.zone.run(() => {
-        this.tasks = tasks;
-        this.visibleTasks = tmp;
-        this.loading = false;
-        this.cdr.detectChanges();
-      });
-    } catch (error: any) {
-      this.zone.run(() => {
-        this.error = error?.response?.data?.detail || error?.message || 'No se pudo cargar el dashboard';
-        this.loading = false;
-        this.cdr.detectChanges();
-      });
+      this.tasks = tasks;
+      this.visibleTasks = tmp;
+    } catch (error: unknown) {
+      this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cargar el dashboard');
+    } finally {
+      this.loading = false;
+      this.changeDetector.markForCheck();
     }
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem('workshop_token');
-    localStorage.removeItem('workshop_user');
-    await this.router.navigate(['/login']);
+    try {
+      this.session.clear();
+      await this.router.navigate(['/login']);
+    } catch (error: unknown) {
+      this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cerrar la sesion');
+      this.loading = false;
+      this.changeDetector.markForCheck();
+    }
   }
 }

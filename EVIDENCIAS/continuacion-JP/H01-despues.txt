@@ -1,0 +1,52 @@
+
+> workshop-login-frontend@0.1.0 test:coverage
+> vitest run --coverage --coverage.reportOnFailure --coverage.include=src/**/*.ts --coverage.reportsDirectory=EVIDENCIAS/continuacion-JP/cobertura-H01
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/app/utils/legacy-format.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/main.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m src/app/services/session.service.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/app/services/auth.service.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/app/services/tasks.service.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/app/services/http-transport.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/app/utils/http-error-message.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/app/auth-tasks-flow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m107 passed[39m[22m[90m (107)[39m
+[2m   Start at [22m 17:37:53
+[2m   Duration [22m 2.01s[2m (transform 555ms, setup 0ms, collect 6.38s, tests 271ms, environment 3ms, prepare 2.53s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   91.63 |       94 |   95.45 |   91.63 |                   
+ src               |     100 |      100 |     100 |     100 |                   
+  main.ts          |     100 |      100 |     100 |     100 |                   
+ src/app           |       0 |       50 |      50 |       0 |                   
+  app.component.ts |       0 |        0 |       0 |       0 | 1-10              
+  app.routes.ts    |       0 |      100 |     100 |       0 | 3-14              
+ src/app/dashboard |     100 |       96 |     100 |     100 |                   
+  ....component.ts |     100 |       96 |     100 |     100 | 64                
+ src/app/login     |     100 |      100 |     100 |     100 |                   
+  ....component.ts |     100 |      100 |     100 |     100 |                   
+ src/app/models    |       0 |        0 |       0 |       0 |                   
+  auth.models.ts   |       0 |        0 |       0 |       0 |                   
+  task.model.ts    |       0 |        0 |       0 |       0 |                   
+ src/app/services  |     100 |      100 |     100 |     100 |                   
+  auth.service.ts  |     100 |      100 |     100 |     100 |                   
+  ...on.service.ts |     100 |      100 |     100 |     100 |                   
+  tasks.service.ts |     100 |      100 |     100 |     100 |                   
+ src/app/utils     |   93.33 |    81.81 |     100 |   93.33 |                   
+  ...or-message.ts |     100 |    94.44 |     100 |     100 | 12                
+  legacy-format.ts |      75 |       25 |     100 |      75 | 3-4               
+ src/environments  |     100 |      100 |     100 |     100 |                   
+  environment.ts   |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
+Exit code: 0

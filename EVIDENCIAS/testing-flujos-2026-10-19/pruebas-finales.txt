@@ -1,0 +1,216 @@
+Comando: npm test -- --reporter=verbose
+Directorio: C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend
+Fecha: 2026-10-19T16:59:56.3774999-05:00
+
+> workshop-login-frontend@0.1.0 test
+> vitest run --reporter=verbose
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+
+ [32m✓[39m src/app/utils/legacy-format.spec.ts[2m > [22mformatTaskLabel[2m > [22mformats priority and owner[32m 3[2mms[22m[39m
+ [32m✓[39m src/main.spec.ts[2m > [22mapplication bootstrap[2m > [22mregisters the router and Angular HTTP providers[32m 27[2mms[22m[39m
+ [32m✓[39m src/main.spec.ts[2m > [22mapplication bootstrap[2m > [22mreports a bootstrap failure[32m 8[2mms[22m[39m
+ [32m✓[39m src/app/utils/http-error-message.spec.ts[2m > [22mgetHttpErrorMessage[2m > [22mprefers the requested backend field in an HTTP error[32m 2[2mms[22m[39m
+ [32m✓[39m src/app/utils/http-error-message.spec.ts[2m > [22mgetHttpErrorMessage[2m > [22mfalls back to the HTTP message, ordinary error message, then supplied fallback[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/utils/http-error-message.spec.ts[2m > [22mgetHttpErrorMessage[2m > [22mignores non-string and empty backend messages[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/services/auth.service.spec.ts[2m > [22mAuthService[2m > [22mposts the documented login payload with the existing timeout[32m 7[2mms[22m[39m
+ [32m✓[39m src/app/services/tasks.service.spec.ts[2m > [22mTasksService[2m > [22mgets the documented owner URL and sends the bearer token[32m 7[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mredirects to login without requesting tasks when there is no token[32m 7[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mrequests tasks with the saved owner and bearer token and processes the array[32m 2[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mdisplays the backend task error and ends loading[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mfalls back to the request message and generic dashboard error[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mremoves the saved token and user on logout and navigates to login[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task HTTP 401 and preserves the session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task HTTP 403 and preserves the session[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task HTTP 400 and preserves the session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task HTTP 500 and preserves the session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task HTTP 503 and preserves the session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task transport error: network[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task transport error: cors[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task transport error: abort[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles task transport error: timeout[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mhandles invalid JSON delivered as an Angular parse error[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mreports a processing failure for body null[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mreports a processing failure for body [ null ][32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22maccepts empty or fully archived results: [][32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22maccepts empty or fully archived results: [ { status: 'ARCHIVED' } ][32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state TODO to Por hacer[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state in_progress to En progreso[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state DONE to Completado[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state COMPLETED to Completado[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state RESUELTO to Resuelto[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state OTHER to OTHER[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mtranslates state  to [32m 0[2mms[22m[39m
+ [31m×[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mBUG-02: reports an unexpected tasks wrapper instead of a successful empty list[32m 6[2mms[22m[39m
+[31m   → expected '' not to be '' // Object.is equality[39m
+ [31m×[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mBUG-03: recovers from invalid saved user {[32m 6[2mms[22m[39m
+[31m   → promise rejected "SyntaxError: Expected property name or '}…" instead of resolving[39m
+ [31m×[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mBUG-03: recovers from invalid saved user null[32m 2[2mms[22m[39m
+[31m   → expected null not to be null[39m
+ [31m×[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mBUG-03: handles storage read failure without an unhandled initialization rejection[32m 3[2mms[22m[39m
+[31m   → promise rejected "Error: Storage unavailable" instead of resolving[39m
+ [31m×[39m src/app/dashboard/dashboard.component.spec.ts[2m > [22mDashboardComponent characterization[2m > [22mBUG-04: handles an invalid status without a rendering exception[32m 2[2mms[22m[39m
+[31m   → expected [Function] to not throw an error but 'TypeError: (status || "").toUpperCase…' was thrown[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22msends the documented login request and stores the successful session[32m 8[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mdoes not send a request when username or password is blank[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mreports a response without token and does not navigate[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mprefers the backend error message and clears busy after a failed request[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mfalls back to the request message and then to the generic error[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty username null without HTTP[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty username undefined without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty username  without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty username     without HTTP[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty password null without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty password undefined without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty password  without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mrejects empty password     without HTTP[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles a missing token: null[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles a missing token: {}[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles a missing token: {"token":""}[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles a missing token: {"token":null}[32m 0[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles HTTP 401 without overwriting an existing session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles HTTP 403 without overwriting an existing session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles HTTP 400 without overwriting an existing session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles HTTP 500 without overwriting an existing session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles HTTP 503 without overwriting an existing session[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles transport failure: network[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles transport failure: cors[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles transport failure: abort[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles transport failure: timeout[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mhandles a JSON parse error even when HTTP status is 200[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mreports a storage write error instead of navigating[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mreports navigation rejection and restores the busy state[32m 1[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mlogs invalid preferences and retains defaults[32m 2[2mms[22m[39m
+ [31m×[39m src/app/login/login.component.spec.ts[2m > [22mLoginComponent characterization[2m > [22mBUG-01: rejects an unexpected login body instead of persisting an invalid session[32m 9[2mms[22m[39m
+[31m   → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+ [32m✓[39m src/app/auth-tasks-flow.spec.ts[2m > [22mLogin -> tasks -> logout with real services and an in-memory HTTP transport[2m > [22mlogs in, reads the persisted session to load tasks, then logs out[32m 10[2mms[22m[39m
+ [32m✓[39m src/app/auth-tasks-flow.spec.ts[2m > [22mLogin -> tasks -> logout with real services and an in-memory HTTP transport[2m > [22mdocuments the absence of a task timeout without inventing a five-second limit[32m 3[2mms[22m[39m
+ [32m✓[39m src/app/auth-tasks-flow.spec.ts[2m > [22mLogin -> tasks -> logout with real services and an in-memory HTTP transport[2m > [22msends nonempty credentials unchanged instead of trimming them[32m 1[2mms[22m[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-02: reports an unexpected tasks wrapper instead of a successful empty list
+AssertionError: expected '' not to be '' // Object.is equality
+ ❯ src/app/dashboard/dashboard.component.spec.ts:189:33
+    187|     getTasks.mockResolvedValue({ data: [] });
+    188|     await component.ngOnInit();
+    189|     expect(component.error).not.toBe('');
+       |                                 ^
+    190|     expect(component.loading).toBe(false);
+    191|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-03: recovers from invalid saved user {
+AssertionError: promise rejected "SyntaxError: Expected property name or '}…" instead of resolving
+ ❯ src/app/dashboard/dashboard.component.spec.ts:196:38
+    194|     storage.setItem('workshop_token', 'test-token');
+    195|     storage.setItem('workshop_user', savedUser);
+    196|     await expect(component.ngOnInit()).resolves.toBeUndefined();
+       |                                      ^
+    197|     expect(component.loading).toBe(false);
+    198|     expect(getTasks).not.toHaveBeenCalled();
+
+Caused by: SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+ ❯ DashboardComponent.ngOnInit src/app/dashboard/dashboard.component.ts:38:22
+ ❯ src/app/dashboard/dashboard.component.spec.ts:196:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-03: recovers from invalid saved user null
+AssertionError: expected null not to be null
+ ❯ src/app/dashboard/dashboard.component.spec.ts:199:32
+    197|     expect(component.loading).toBe(false);
+    198|     expect(getTasks).not.toHaveBeenCalled();
+    199|     expect(component.user).not.toBeNull();
+       |                                ^
+    200|   });
+    201| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-03: handles storage read failure without an unhandled initialization rejection
+AssertionError: promise rejected "Error: Storage unavailable" instead of resolving
+ ❯ src/app/dashboard/dashboard.component.spec.ts:204:38
+    202|   it('BUG-03: handles storage read failure without an unhandled initia…
+    203|     vi.spyOn(storage, 'getItem').mockImplementation(() => { throw new …
+    204|     await expect(component.ngOnInit()).resolves.toBeUndefined();
+       |                                      ^
+    205|     expect(component.loading).toBe(false);
+    206|     expect(getTasks).not.toHaveBeenCalled();
+
+Caused by: Error: Storage unavailable
+ ❯ MemoryStorage.<anonymous> src/app/dashboard/dashboard.component.spec.ts:203:67
+ ❯ DashboardComponent.ngOnInit src/app/dashboard/dashboard.component.ts:37:32
+ ❯ src/app/dashboard/dashboard.component.spec.ts:204:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: handles an invalid status without a rendering exception
+AssertionError: expected [Function] to not throw an error but 'TypeError: (status || "").toUpperCase…' was thrown
+
+- Expected: 
+undefined
+
++ Received: 
+"TypeError: (status || \"\").toUpperCase is not a function"
+
+ ❯ src/app/dashboard/dashboard.component.spec.ts:213:79
+    211|     getTasks.mockResolvedValue([{ status: 42, priority: 'HIGH', owner:…
+    212|     await component.ngOnInit();
+    213|     expect(() => component.statusLabel(component.visibleTasks[0].statu…
+       |                                                                               ^
+    214|   });
+    215| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects an unexpected login body instead of persisting an invalid session
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/login/login.component.spec.ts:250:26
+    248|     component.password = 'password';
+    249|     await component.login();
+    250|     expect(navigate).not.toHaveBeenCalled();
+       |                          ^
+    251|     expect(storage.getItem('workshop_token')).toBeNull();
+    252|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m67 passed[39m[22m[90m (73)[39m
+[2m   Start at [22m 16:59:57
+[2m   Duration [22m 1.47s[2m (transform 728ms, setup 0ms, collect 4.87s, tests 167ms, environment 2ms, prepare 1.41s)[22m
+
+
+Exit code: 1

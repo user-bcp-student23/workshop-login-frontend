@@ -1,0 +1,31 @@
+19/10/2026 - Ampliacion autorizada por JP
+Directorio: raiz de workshop-login-frontend.
+Servidor: npm start -- --port 4317; Invoke-WebRequest /login -> HTTP 200.
+Herramienta: navegador integrado / runPlaywrightCode.
+Pagina: 486127f4-0a3a-452a-9439-d744ae688a24.
+Exit code: no aplica (herramienta, no proceso CLI de tests).
+
+Antes: BUG-05 documentado en ../implementacion-H-01/navegador.txt.
+Tras login, Requirement no era visible en 7000 ms.
+
+Despues: ejecucion completa sin excepciones, con aserciones:
+1. Sembrar token/usuario legacy y preferencias dark; recargar login.
+2. Verificar eliminacion legacy de localStorage.
+3. Interceptar POST /auth/login con token ficticio y usuario student.
+4. Interceptar GET /api/tasks?owner=student con tarea Requirement.
+   Verificar Authorization exactamente Bearer test-token.
+5. Rellenar formulario y pulsar Ingresar; esperar /dashboard.
+6. Esperar heading Requirement visible con timeout 7000 ms: PASS.
+7. Recargar; esperar Requirement visible de nuevo: PASS.
+8. Verificar token y usuario en sessionStorage, sin token legacy,
+   preferencias dark intactas: PASS.
+9. Pulsar Cerrar sesion, esperar /login.
+10. Verificar token/usuario ausentes en ambos almacenamientos,
+    preferencias dark intactas: PASS.
+11. Limpiar ambos almacenamientos y retirar interceptaciones.
+
+Resultado del flujo con fixtures: PASS.
+No prueba disponibilidad, autorizacion o CORS de backends reales.
+Correccion: markForCheck tras completar/capturar inicializacion asincrona
+y tras errores de logout. La notificacion explicita hace visible la actualizacion
+en la configuracion actual; no se cambio el modo global de deteccion de Angular.

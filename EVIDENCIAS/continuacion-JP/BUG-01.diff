@@ -1,0 +1,18 @@
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\login\\login.component.ts.snapshot" "b/src\\app\\login\\login.component.ts"
+index 7764e4a..7288a46 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\login\\login.component.ts.snapshot"
++++ "b/src\\app\\login\\login.component.ts"
+@@ -56,6 +56,13 @@ export class LoginComponent {
+             client: 'angular-workshop'
+           });
+           if (response && response.token) {
++            const user: unknown = response.user;
++            if (typeof response.token !== 'string'
++              || typeof user !== 'object' || user === null || Array.isArray(user)
++              || !('username' in user) || typeof user.username !== 'string'
++              || ('displayName' in user && typeof user.displayName !== 'string')) {
++              throw new Error('La respuesta de autenticacion no es valida.');
++            }
+             this.session.save(response.token, response.user);
+             localStorage.setItem('workshop_preferences', JSON.stringify(this.preferences));
+             await this.router.navigate(['/dashboard']);

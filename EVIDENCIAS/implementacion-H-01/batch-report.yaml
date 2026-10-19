@@ -1,0 +1,46 @@
+scope: workshop-login-frontend
+approval:
+  source: user-message
+  date: "2026-10-19"
+  items: [H-01, H-03]
+items:
+  - id: H-01
+    implementation: applied
+    status: blocked
+    backlog_state: Pendiente
+    local_diff: H-01.diff
+    characterization_before: {passed: 4, failed: 0, skipped: 0, exit_code: 0}
+    correction_before:
+      exit_code: 1
+      reason: "New SessionService module did not exist; test suite could not load."
+    correction_after: {passed: 20, failed: 0, skipped: 0, exit_code: 0}
+    focused_item_tests: {passed: 26, failed: 0, not_selected: 59, exit_code: 0}
+    full_suite_before: {passed: 71, failed: 6, skipped: 0, exit_code: 1}
+    full_suite_after: {passed: 93, failed: 3, skipped: 0, exit_code: 1}
+    coverage:
+      scope: "src/**/*.ts; no persistent configuration changes"
+      source_lines: 91.11
+      modified_service_and_components_lines: 100
+      goal: 85
+      goal_met: true
+    build: {exit_code: 0}
+    browser:
+      exit_code: null
+      tool: integrated-Playwright
+      startup: "HTTP 200 at localhost:4317/login"
+      session_reload_logout: PASS
+      full_visible_flow: FAIL
+      failure: "Requirement heading not visible in 7000 ms (existing BUG-05)"
+      evidence: navegador.txt
+      server_stopped: true
+    remaining_failures: [BUG-01, BUG-02, BUG-04, BUG-05]
+  - id: H-03
+    implementation: not_started
+    status: blocked
+    reason: "User gate forbids advancing before H-01 validation is green."
+overall: FAIL
+notes:
+  - "No test expectations weakened; full suite failures are preserved."
+  - "BUG-03 now passes through the session read error boundary included in H-01."
+  - "sessionStorage mitigates persistence, not JavaScript/XSS access."
+  - "No audit, package update or backend access performed in this batch."

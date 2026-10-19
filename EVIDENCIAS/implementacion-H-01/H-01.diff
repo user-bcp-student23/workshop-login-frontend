@@ -1,0 +1,994 @@
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.ts" "b/src\\app\\login\\login.component.ts"
+index 9b5811a..7764e4a 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.ts"
++++ "b/src\\app\\login\\login.component.ts"
+@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
+ import { Router } from '@angular/router';
+ import merge from 'lodash/merge';
+ import { AuthService } from '../services/auth.service';
++import { SessionService } from '../services/session.service';
+ import { getHttpErrorMessage } from '../utils/http-error-message';
+ 
+ @Component({
+@@ -20,7 +21,17 @@ export class LoginComponent {
+   message: any = '';
+   preferences: any = { theme: 'light', showTips: true, compact: false };
+ 
+-  constructor(private router: Router, private authService: AuthService) {
++  constructor(
++    private router: Router,
++    private authService: AuthService,
++    private session: SessionService
++  ) {
++    try {
++      this.session.initialize();
++    } catch (error: unknown) {
++      this.message = getHttpErrorMessage(error, 'message', 'No se pudo preparar la sesion');
++      console.error(error);
++    }
+     try {
+       const saved = JSON.parse(localStorage.getItem('workshop_preferences') || '{}');
+       this.preferences = merge(this.preferences, saved);
+@@ -45,8 +56,7 @@ export class LoginComponent {
+             client: 'angular-workshop'
+           });
+           if (response && response.token) {
+-            localStorage.setItem('workshop_token', response.token);
+-            localStorage.setItem('workshop_user', JSON.stringify(response.user));
++            this.session.save(response.token, response.user);
+             localStorage.setItem('workshop_preferences', JSON.stringify(this.preferences));
+             await this.router.navigate(['/dashboard']);
+           } else {
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.ts" "b/src\\app\\dashboard\\dashboard.component.ts"
+index 1b5f9d9..519cdae 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.ts"
++++ "b/src\\app\\dashboard\\dashboard.component.ts"
+@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
+ import { Component, OnInit } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { TasksService } from '../services/tasks.service';
++import { SessionService } from '../services/session.service';
+ import { getHttpErrorMessage } from '../utils/http-error-message';
+ import { formatTaskLabel } from '../utils/legacy-format';
+ 
+@@ -27,21 +28,25 @@ export class DashboardComponent implements OnInit {
+   loading: any = true;
+   error: any = '';
+ 
+-  constructor(private router: Router, private tasksService: TasksService) {}
++  constructor(
++    private router: Router,
++    private tasksService: TasksService,
++    private session: SessionService
++  ) {}
+ 
+   statusLabel(status: string): string {
+     return STATUS_LABELS[(status || '').toUpperCase()] || status;
+   }
+ 
+   async ngOnInit(): Promise<void> {
+-    const token = localStorage.getItem('workshop_token');
+-    this.user = JSON.parse(localStorage.getItem('workshop_user') || '{}');
+-    if (!token) {
+-      await this.router.navigate(['/login']);
+-      return;
+-    }
+     try {
+-      const tasks = await this.tasksService.getTasks(this.user.username || '', token);
++      const session = this.session.read();
++      if (!session) {
++        await this.router.navigate(['/login']);
++        return;
++      }
++      this.user = session.user;
++      const tasks = await this.tasksService.getTasks(this.user.username || '', session.token);
+       const tmp: any[] = [];
+       for (let i = 0; i < tasks.length; i++) {
+         if (tasks[i].status !== 'ARCHIVED') {
+@@ -52,16 +57,20 @@ export class DashboardComponent implements OnInit {
+       tmp.sort((a: any, b: any) => a.priority > b.priority ? -1 : 1);
+       this.tasks = tasks;
+       this.visibleTasks = tmp;
+-      this.loading = false;
+     } catch (error: unknown) {
+       this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cargar el dashboard');
++    } finally {
+       this.loading = false;
+     }
+   }
+ 
+   async logout(): Promise<void> {
+-    localStorage.removeItem('workshop_token');
+-    localStorage.removeItem('workshop_user');
+-    await this.router.navigate(['/login']);
++    try {
++      this.session.clear();
++      await this.router.navigate(['/login']);
++    } catch (error: unknown) {
++      this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cerrar la sesion');
++      this.loading = false;
++    }
+   }
+ }
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.spec.ts" "b/src\\app\\login\\login.component.spec.ts"
+index 22cf3fd..4783e7a 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.spec.ts"
++++ "b/src\\app\\login\\login.component.spec.ts"
+@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { AuthService } from '../services/auth.service';
++import { SessionService } from '../services/session.service';
+ import { LoginComponent } from './login.component';
+ 
+ class MemoryStorage {
+@@ -27,6 +28,7 @@ class MemoryStorage {
+ 
+ describe('LoginComponent characterization', () => {
+   let storage: MemoryStorage;
++  let persistent: MemoryStorage;
+   let router: Router;
+   let navigate: ReturnType<typeof vi.fn>;
+   let authService: AuthService;
+@@ -34,7 +36,9 @@ describe('LoginComponent characterization', () => {
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+-    vi.stubGlobal('localStorage', storage);
++    persistent = new MemoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', storage);
+     navigate = vi.fn().mockResolvedValue(true);
+     router = { navigate } as unknown as Router;
+     login = vi.fn();
+@@ -50,7 +54,7 @@ describe('LoginComponent characterization', () => {
+   it('sends the documented login request and stores the successful session', async () => {
+     const user = { username: 'student', displayName: 'Student' };
+     login.mockResolvedValue({ token: 'test-token', user });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'Workshop123!';
+ 
+@@ -63,13 +67,13 @@ describe('LoginComponent characterization', () => {
+     });
+     expect(storage.getItem('workshop_token')).toBe('test-token');
+     expect(storage.getItem('workshop_user')).toBe(JSON.stringify(user));
+-    expect(storage.getItem('workshop_preferences')).toBe(JSON.stringify(component.preferences));
++    expect(persistent.getItem('workshop_preferences')).toBe(JSON.stringify(component.preferences));
+     expect(navigate).toHaveBeenCalledWith(['/dashboard']);
+     expect(component.busy).toBe(false);
+   });
+ 
+   it('does not send a request when username or password is blank', async () => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = '   ';
+     component.password = 'password';
+     await component.login();
+@@ -85,7 +89,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it('reports a response without token and does not navigate', async () => {
+     login.mockResolvedValue({ user: { username: 'student' } });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+ 
+@@ -102,7 +106,7 @@ describe('LoginComponent characterization', () => {
+       status: 401,
+       statusText: 'Unauthorized'
+     }));
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'bad';
+ 
+@@ -114,7 +118,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('falls back to the request message and then to the generic error', async () => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'bad';
+     login.mockRejectedValueOnce(new Error('Request failed'));
+@@ -128,7 +132,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty username %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = value;
+     component.password = 'password';
+     await component.login();
+@@ -139,7 +143,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty password %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = value;
+     await component.login();
+@@ -151,7 +155,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it.each([null, {}, { token: '' }, { token: null }])('handles a missing token: %j', async response => {
+     login.mockResolvedValue(response);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -165,7 +169,7 @@ describe('LoginComponent characterization', () => {
+     storage.setItem('workshop_token', 'existing-token');
+     const error = new HttpErrorResponse({ status, error: { message: 'Rejected' } });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -185,7 +189,7 @@ describe('LoginComponent characterization', () => {
+         : { type: cause }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -200,7 +204,7 @@ describe('LoginComponent characterization', () => {
+       error: { error: new SyntaxError('Invalid JSON'), text: '{' }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -212,7 +216,7 @@ describe('LoginComponent characterization', () => {
+   it('reports a storage write error instead of navigating', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     vi.spyOn(storage, 'setItem').mockImplementation(() => { throw new Error('Storage unavailable'); });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -224,7 +228,7 @@ describe('LoginComponent characterization', () => {
+   it('reports navigation rejection and restores the busy state', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     navigate.mockRejectedValue(new Error('Navigation failed'));
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -234,16 +238,25 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('logs invalid preferences and retains defaults', () => {
+-    storage.setItem('workshop_preferences', '{');
++    persistent.setItem('workshop_preferences', '{');
+     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     expect(log).toHaveBeenCalledWith('Preferences could not be loaded', expect.any(SyntaxError));
+     expect(component.preferences).toEqual({ theme: 'light', showTips: true, compact: false });
+   });
+ 
++  it('H-01: reports failure to remove legacy credentials during initialization', () => {
++    const error = new Error('Cleanup unavailable');
++    vi.spyOn(persistent, 'removeItem').mockImplementation(() => { throw error; });
++    const component = new LoginComponent(router, authService, new SessionService());
++    expect(component.message).toBe('Cleanup unavailable');
++    expect(console.error).toHaveBeenCalledWith(error);
++    expect(navigate).not.toHaveBeenCalled();
++  });
++
+   it('BUG-01: rejects an unexpected login body instead of persisting an invalid session', async () => {
+     login.mockResolvedValue({ token: 'test-token' });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService());
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts" "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+index 8a7bde9..309cadf 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts"
++++ "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { TasksService } from '../services/tasks.service';
++import { SessionService } from '../services/session.service';
+ import { DashboardComponent } from './dashboard.component';
+ 
+ class MemoryStorage {
+@@ -27,18 +28,22 @@ class MemoryStorage {
+ 
+ describe('DashboardComponent characterization', () => {
+   let storage: MemoryStorage;
++  let persistent: MemoryStorage;
+   let navigate: ReturnType<typeof vi.fn>;
+   let getTasks: ReturnType<typeof vi.fn>;
+   let component: DashboardComponent;
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+-    vi.stubGlobal('localStorage', storage);
++    persistent = new MemoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', storage);
+     navigate = vi.fn().mockResolvedValue(true);
+     getTasks = vi.fn();
+     component = new DashboardComponent(
+       { navigate } as unknown as Router,
+-      { getTasks } as unknown as TasksService
++      { getTasks } as unknown as TasksService,
++      new SessionService()
+     );
+   });
+ 
+@@ -107,13 +112,13 @@ describe('DashboardComponent characterization', () => {
+   it('removes the saved token and user on logout and navigates to login', async () => {
+     storage.setItem('workshop_token', 'test-token');
+     storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+-    storage.setItem('workshop_preferences', JSON.stringify({ theme: 'dark' }));
++    persistent.setItem('workshop_preferences', JSON.stringify({ theme: 'dark' }));
+ 
+     await component.logout();
+ 
+     expect(storage.getItem('workshop_token')).toBeNull();
+     expect(storage.getItem('workshop_user')).toBeNull();
+-    expect(storage.getItem('workshop_preferences')).toBe(JSON.stringify({ theme: 'dark' }));
++    expect(persistent.getItem('workshop_preferences')).toBe(JSON.stringify({ theme: 'dark' }));
+     expect(navigate).toHaveBeenCalledWith(['/login']);
+   });
+ 
+@@ -204,6 +209,22 @@ describe('DashboardComponent characterization', () => {
+     await expect(component.ngOnInit()).resolves.toBeUndefined();
+     expect(component.loading).toBe(false);
+     expect(getTasks).not.toHaveBeenCalled();
++    expect(component.error).toBe('Storage unavailable');
++  });
++
++  it('H-01: reports logout storage removal failure without navigating', async () => {
++    vi.spyOn(storage, 'removeItem').mockImplementation(() => { throw new Error('Removal unavailable'); });
++    await expect(component.logout()).resolves.toBeUndefined();
++    expect(component.error).toBe('Removal unavailable');
++    expect(component.loading).toBe(false);
++    expect(navigate).not.toHaveBeenCalled();
++  });
++
++  it('H-01: reports logout navigation rejection', async () => {
++    navigate.mockRejectedValue(new Error('Navigation failed'));
++    await expect(component.logout()).resolves.toBeUndefined();
++    expect(component.error).toBe('Navigation failed');
++    expect(component.loading).toBe(false);
+   });
+ 
+   it('BUG-04: handles an invalid status without a rendering exception', async () => {
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\auth-tasks-flow.spec.ts" "b/src\\app\\auth-tasks-flow.spec.ts"
+index 6830771..f71b2cc 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\auth-tasks-flow.spec.ts"
++++ "b/src\\app\\auth-tasks-flow.spec.ts"
+@@ -7,9 +7,11 @@ import { DashboardComponent } from './dashboard/dashboard.component';
+ import { LoginComponent } from './login/login.component';
+ import { AuthService } from './services/auth.service';
+ import { TasksService } from './services/tasks.service';
++import { SessionService } from './services/session.service';
+ 
+ describe('Login -> tasks -> logout with real services and an in-memory HTTP transport', () => {
+   let values: Map<string, string>;
++  let preferences: Map<string, string>;
+   let requests: HttpRequest<unknown>[];
+   let replies: Subject<HttpEvent<unknown>>[];
+   let login: LoginComponent;
+@@ -20,9 +22,15 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+ 
+   beforeEach(() => {
+     values = new Map();
++    preferences = new Map();
+     requests = [];
+     replies = [];
+     vi.stubGlobal('localStorage', {
++      getItem: (key: string) => preferences.get(key) ?? null,
++      setItem: (key: string, value: string) => preferences.set(key, String(value)),
++      removeItem: (key: string) => preferences.delete(key)
++    });
++    vi.stubGlobal('sessionStorage', {
+       getItem: (key: string) => values.get(key) ?? null,
+       setItem: (key: string, value: string) => values.set(key, String(value)),
+       removeItem: (key: string) => values.delete(key)
+@@ -37,8 +45,8 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     });
+     navigate = vi.fn().mockResolvedValue(true);
+     router = { navigate } as unknown as Router;
+-    login = new LoginComponent(router, new AuthService(http));
+-    dashboard = new DashboardComponent(router, new TasksService(http));
++    login = new LoginComponent(router, new AuthService(http), new SessionService());
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService());
+     login.username = 'student';
+     login.password = 'Workshop123!';
+   });
+@@ -69,7 +77,7 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     expect(navigate).toHaveBeenLastCalledWith(['/dashboard']);
+     expect(values.get('workshop_token')).toBe('test-token');
+ 
+-    dashboard = new DashboardComponent(router, new TasksService(http));
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService());
+     const loading = dashboard.ngOnInit();
+     expect(dashboard.loading).toBe(true);
+     expect(requests[1].method).toBe('GET');
+@@ -89,11 +97,11 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     expect(dashboard.visibleTasks[0].label).toBe('HIGH · STUDENT');
+     expect(dashboard.statusLabel(dashboard.visibleTasks[0].status)).toBe('Por hacer');
+ 
+-    const preferences = values.get('workshop_preferences');
++    const savedPreferences = preferences.get('workshop_preferences');
+     await dashboard.logout();
+     expect(values.has('workshop_token')).toBe(false);
+     expect(values.has('workshop_user')).toBe(false);
+-    expect(values.get('workshop_preferences')).toBe(preferences);
++    expect(preferences.get('workshop_preferences')).toBe(savedPreferences);
+     expect(navigate).toHaveBeenLastCalledWith(['/login']);
+     await dashboard.ngOnInit();
+     expect(requests).toHaveLength(2);
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\tests\\browser-flows.mjs" "b/tests\\browser-flows.mjs"
+index 625f902..61fae9e 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\tests\\browser-flows.mjs"
++++ "b/tests\\browser-flows.mjs"
+@@ -1,32 +1,70 @@
+ export async function verifyBrowserFlow(page, baseUrl = 'http://localhost:4317') {
+   await page.goto(`${baseUrl}/login`);
+-  await page.evaluate(() => localStorage.clear());
++  await page.evaluate(() => {
++    localStorage.clear();
++    sessionStorage.clear();
++    localStorage.setItem('workshop_token', 'legacy-token');
++    localStorage.setItem('workshop_user', '{"username":"legacy"}');
++    localStorage.setItem('workshop_preferences', '{"theme":"dark"}');
++  });
+   await page.reload();
++  const assertSession = async (signedIn) => {
++    const state = await page.evaluate(() => ({
++      legacyToken: localStorage.getItem('workshop_token'),
++      legacyUser: localStorage.getItem('workshop_user'),
++      token: sessionStorage.getItem('workshop_token'),
++      user: sessionStorage.getItem('workshop_user'),
++      preferences: JSON.parse(localStorage.getItem('workshop_preferences') || '{}')
++    }));
++    if (state.legacyToken !== null || state.legacyUser !== null
++      || state.token !== (signedIn ? 'test-token' : null)
++      || state.user !== (signedIn ? JSON.stringify({ username: 'student', displayName: 'Student' }) : null)
++      || state.preferences.theme !== 'dark') {
++      throw new Error('H-01: session persistence or preference preservation failed');
++    }
++  };
++  await assertSession(false);
+   await page.route('http://localhost:8080/auth/login', route => route.fulfill({
+     status: 200,
+     contentType: 'application/json',
+     body: JSON.stringify({ token: 'test-token', user: { username: 'student', displayName: 'Student' } })
+   }));
+-  await page.route('http://localhost:8000/api/tasks?owner=student', route => route.fulfill({
++  await page.route('http://localhost:8000/api/tasks?owner=student', route => {
++    if (route.request().headers().authorization !== 'Bearer test-token') {
++      throw new Error('H-01: task request must keep its Bearer header');
++    }
++    return route.fulfill({
+     status: 200,
+     contentType: 'application/json',
+     body: JSON.stringify([{
+       title: 'Requirement', description: 'Browser fixture', status: 'TODO', priority: 'HIGH', owner: 'student'
+     }])
+-  }));
++    });
++  });
+   try {
+     await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill('student');
+     await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('Workshop123!');
+     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+     await page.waitForURL('**/dashboard');
++    await assertSession(true);
++    await page.getByRole('heading', { name: 'Requirement', exact: true })
++      .waitFor({ state: 'visible', timeout: 7000 });
++    await page.reload();
+     await page.getByRole('heading', { name: 'Requirement', exact: true })
+       .waitFor({ state: 'visible', timeout: 7000 });
++    await assertSession(true);
++    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
++    await page.waitForURL('**/login');
++    await assertSession(false);
+   } finally {
+     if (page.url().endsWith('/dashboard')) {
+       await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+       await page.waitForURL('**/login');
+     }
+-    await page.evaluate(() => localStorage.clear());
++    await page.evaluate(() => {
++      localStorage.clear();
++      sessionStorage.clear();
++    });
+     await page.unrouteAll({ behavior: 'wait' });
+   }
+ }
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\docs\\ENDPOINTS.md" "b/docs\\ENDPOINTS.md"
+index f635942..70573d2 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\docs\\ENDPOINTS.md"
++++ "b/docs\\ENDPOINTS.md"
+@@ -34,7 +34,7 @@ Antes de la peticion:
+ - Durante la llamada, `busy = true`: el boton queda deshabilitado y muestra
+   **Ingresando...**.
+ 
+-Fuentes: [componente](../src/app/login/login.component.ts#L32),
++Fuentes: [componente](../src/app/login/login.component.ts#L43),
+ [boton y mensaje](../src/app/login/login.component.html#L34),
+ [servicio](../src/app/services/auth.service.ts#L11).
+ 
+@@ -76,7 +76,7 @@ Content-Type: application/json
+ ```
+ 
+ Fuentes: [request tipado](../src/app/models/auth.models.ts#L1),
+-[construccion del body](../src/app/login/login.component.ts#L42),
++[construccion del body](../src/app/login/login.component.ts#L53),
+ [peticion y timeout](../src/app/services/auth.service.ts#L13),
+ [URL base](../src/environments/environment.ts#L2).
+ Los headers automaticos corresponden al backend HTTP de Angular instalado:
+@@ -111,14 +111,15 @@ Ejemplo exacto del cuerpo simulado en la
+ }
+ ```
+ 
+-Con este cuerpo, el componente escribe token y usuario en `localStorage`,
+-guarda tambien las preferencias bajo `workshop_preferences` y navega a
++Con este cuerpo, el componente delega token y usuario a `SessionService`, que
++los escribe en `sessionStorage`. Guarda tambien las preferencias en
++`localStorage` bajo `workshop_preferences` y navega a
+ `/dashboard`. El bloque `finally` vuelve a poner `busy = false`.
+ Las preferencias son estado local y **no** son campos de esta respuesta.
+ No se consume un wrapper `data`, un refresh token ni headers de respuesta.
+ 
+ Fuentes: [response y usuario tipados](../src/app/models/auth.models.ts#L7),
+-[persistencia y navegacion](../src/app/login/login.component.ts#L47),
++[persistencia y navegacion](../src/app/login/login.component.ts#L58),
+ [saludo](../src/app/dashboard/dashboard.component.html#L6).
+ El criterio HTTP y el tratamiento de JSON se verifican en el
+ [transporte Angular instalado](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1123).
+@@ -141,7 +142,7 @@ el error con `console.error`. En el `catch` no borra una sesion anterior.
+ | HTTP exitoso, pero JSON invalido | Angular produce un error de parseo; entra al `catch`, muestra el mensaje comun y habilita el boton. |
+ | Cuerpo nulo, sin token o con token falsy (por ejemplo `""`) | Muestra **El backend respondió sin token.** No escribe la sesion ni navega. Finaliza `busy`. |
+ | Token truthy con `user` ausente/incompatible, o token con tipo incorrecto | No hay validacion runtime. Se intenta persistir y navegar; la UI puede llegar a dashboard con datos corruptos. No hay mensaje de contrato invalido garantizado. |
+-| Falla al escribir `localStorage` o rechazo de la promesa de navegacion | Ocurre dentro del mismo `try`: muestra el error comun, lo registra y restaura `busy`. No revierte escrituras ya realizadas; puede quedar una sesion parcial. |
++| Falla al limpiar credenciales legacy, escribir sesion en `sessionStorage`, guardar preferencias en `localStorage` o rechazo de navegacion | Ocurre dentro del mismo `try`: muestra el error comun, lo registra y restaura `busy`. No revierte escrituras ya realizadas; puede quedar una sesion parcial. |
+ 
+ Ejemplo de body de error de la
+ [prueba con `401`](../src/app/login/login.component.spec.ts#L97):
+@@ -158,20 +159,30 @@ confirmado del backend. **Pregunta abierta:** codigos, cuerpos y textos reales d
+ errores del servicio de autenticacion. Los errores sin body legible pueden
+ mostrar texto tecnico de Angular, no necesariamente un mensaje amigable.
+ 
+-Fuentes: [catch y finally](../src/app/login/login.component.ts#L55),
++Fuentes: [catch y finally](../src/app/login/login.component.ts#L65),
+ [extraccion del mensaje](../src/app/utils/http-error-message.ts#L5),
+ [parseo y timeout en Angular](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1123).
+ El `catch` de carga inicial de preferencias solo registra
+ `Preferences could not be loaded` en consola; no presenta un error en la UI
+-([constructor](../src/app/login/login.component.ts#L23)).
++([constructor](../src/app/login/login.component.ts#L24)).
++Antes de cargar preferencias, el constructor intenta eliminar las claves legacy
++de token/usuario en `localStorage` mediante `SessionService.initialize()`. Si
++falla, muestra el mensaje del error (fallback: **No se pudo preparar la sesion**)
++y lo registra con `console.error`. No copia las credenciales legacy; se requiere
++un login nuevo. Una nueva pulsacion de Ingresar vuelve a intentar la limpieza
++al guardar la sesion.
+ 
+ ### 5. Notas de seguridad relevantes
+ 
+ - Es un laboratorio local: el request contiene la contrasena y se envia a HTTP,
+   no a HTTPS. No usar credenciales reales ni publicar esta configuracion.
+-- La sesion **sigue en `localStorage`**, no en memoria, `sessionStorage` ni cookie
+-  `HttpOnly`. El componente guarda token, usuario y preferencias; no existe un
+-  servicio central de sesion en el codigo actual.
++- Token y usuario estan centralizados en
++  [SessionService](../src/app/services/session.service.ts), en `sessionStorage`.
++  Las preferencias siguen en `localStorage`. La sesion se conserva al recargar
++  la misma pestaña; su restauracion/duplicacion depende del navegador. Se
++  eliminan las claves legacy sin migrarlas. Esta es una mitigacion de
++  persistencia, no una proteccion `HttpOnly`: JavaScript del mismo origen sigue
++  pudiendo leer el token. No se promete revocacion al cerrar una pestaña.
+ - El mensaje **sigue usando `[innerHTML]`**. Angular sanitiza ese binding por
+   defecto; no se observa `bypassSecurityTrustHtml`. No afirmar que se elimino el
+   HTML dinamico ni que se demostro un XSS: el mensaje aun concatena usuario y
+@@ -180,8 +191,8 @@ El `catch` de carga inicial de preferencias solo registra
+   puede inferir su formato ni la duracion desde la interfaz `LoginResponse`.
+ 
+ Fuentes: [advertencia de laboratorio](../README.md),
+-[persistencia](../src/app/login/login.component.ts#L48),
+-[construccion del error](../src/app/login/login.component.ts#L57),
++[persistencia](../src/app/login/login.component.ts#L59),
++[construccion del error](../src/app/login/login.component.ts#L67),
+ [binding HTML](../src/app/login/login.component.html#L39),
+ [HALLAZGOS.md](../HALLAZGOS.md).
+ 
+@@ -189,17 +200,20 @@ Fuentes: [advertencia de laboratorio](../README.md),
+ 
+ ### 1. Quien lo llama
+ 
+-`DashboardComponent.ngOnInit()` lee `workshop_token` y parsea `workshop_user`
+-desde `localStorage`. Con token truthy llama
++`DashboardComponent.ngOnInit()` obtiene token y usuario mediante
++`SessionService.read()`, desde `sessionStorage`. Con token truthy llama
+ `TasksService.getTasks(this.user.username || '', token)`. Este servicio usa
+ `HttpClient.get<Task[]>` y `firstValueFrom`; no utiliza Axios.
+ 
+-Si no hay token, navega a `/login` y no hace la peticion. El parseo del usuario
+-ocurre **antes** de esa comprobacion y fuera del `try` de HTTP, por lo que una
+-sesion corrupta puede impedir incluso esa redireccion. Mientras espera el
++Si no hay token, navega a `/login` y no hace la peticion. La lectura, limpieza de
++credenciales legacy y parseo del usuario quedan dentro del `try` de
++inicializacion. El servicio rechaza usuario nulo, arreglo, escalar o campos
++`username`/`displayName` presentes que no sean strings. Un usuario ausente
++se interpreta como `{}` para conservar el filtro vacio existente. Esto valida
++almacenamiento, no el cuerpo HTTP de login. Mientras espera el
+ resultado, la UI muestra los bloques de carga (`loading` comienza en `true`).
+ 
+-Fuentes: [inicializacion](../src/app/dashboard/dashboard.component.ts#L36),
++Fuentes: [inicializacion](../src/app/dashboard/dashboard.component.ts#L41),
+ [servicio](../src/app/services/tasks.service.ts#L11),
+ [carga y error en template](../src/app/dashboard/dashboard.component.html#L12).
+ 
+@@ -229,7 +243,7 @@ Authorization: Bearer test-token
+ ```
+ 
+ Fuentes: [query y header](../src/app/services/tasks.service.ts#L11),
+-[propietario desde sesion](../src/app/dashboard/dashboard.component.ts#L44),
++[propietario desde sesion](../src/app/dashboard/dashboard.component.ts#L49),
+ [URL base](../src/environments/environment.ts#L3).
+ Headers y serializacion automaticos:
+ [transporte Angular instalado](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1075).
+@@ -292,8 +306,8 @@ Reglas actuales de presentacion:
+   **No hay tareas para mostrar todavía.**
+ 
+ Fuentes: [interfaz Task](../src/app/models/task.model.ts#L1),
+-[transformacion y asignacion](../src/app/dashboard/dashboard.component.ts#L44),
+-[estados](../src/app/dashboard/dashboard.component.ts#L8),
++[transformacion y asignacion](../src/app/dashboard/dashboard.component.ts#L49),
++[estados](../src/app/dashboard/dashboard.component.ts#L9),
+ [formateador](../src/app/utils/legacy-format.ts#L1),
+ [tarjetas y lista vacia](../src/app/dashboard/dashboard.component.html#L20).
+ 
+@@ -310,7 +324,7 @@ mensaje no vacio; para otros casos usa **No se pudo cargar el dashboard**.
+ 
+ | Caso | Reaccion de la UI y sesion |
+ |---|---|
+-| No hay token guardado | No consulta tareas; navega a `/login`, salvo que falle antes el parseo de `workshop_user`. |
++| No hay token guardado | No consulta tareas; navega a `/login` y finaliza `loading`. Un token legacy en `localStorage` se elimina, no se reutiliza. |
+ | Token invalido/expirado rechazado con `401` o `403` | Muestra el error segun la regla comun y termina la carga; permanece en dashboard. No borra token/usuario ni redirige a login automaticamente. |
+ | Otros errores HTTP (`4xx`/`5xx`) | Misma reaccion; no hay ramas especificas por status. El boton **Cerrar sesión** permanece disponible. |
+ | Timeout | No se configura timeout de aplicacion: si no hay respuesta ni error de transporte, la carga puede continuar indefinidamente. Si el navegador finalmente reporta error, se aplica el manejo comun. |
+@@ -320,8 +334,8 @@ mensaje no vacio; para otros casos usa **No se pudo cargar el dashboard**.
+ | Objeto sin `length` en lugar de arreglo, por ejemplo `{ "data": [] }` | No hay validacion de arreglo. El bucle no itera si `length` es `undefined`, guarda el objeto en `tasks` y termina mostrando lista vacia, sin advertencia de contrato. Otros formatos pueden comportarse distinto. |
+ | Elementos nulos o formato que falla durante el bucle o el ordenamiento | Si lanza dentro del `try`, muestra el mensaje del error y termina la carga. No garantiza un mensaje amigable de respuesta inesperada. |
+ | Campos ausentes o tipos incompatibles que no fallan al procesar | Pueden producir texto vacio, valores por defecto o fallos de renderizado. Un error posterior del template, por ejemplo al aplicar `toUpperCase()`/`toLowerCase()` a un estado no string, no esta cubierto por el `catch` HTTP. |
+-| JSON invalido de `workshop_user` o fallo al leer almacenamiento | Sucede antes del `try` HTTP. No se asigna el error de dashboard ni se finaliza `loading` mediante ese `catch`; la inicializacion falla sin recuperacion de UI definida. |
+-| `workshop_user` contiene el JSON valido `null` y hay token | Acceder a `this.user.username` falla dentro del `try`, antes de solicitar tareas: se guarda el mensaje del error y se pone `loading = false`. El saludo del template tambien intenta acceder al usuario y no tiene una guarda para `null`; no se garantiza una recuperacion visual correcta. |
++| JSON invalido de `workshop_user`, usuario guardado incompatible o fallo al leer/limpiar almacenamiento | Entra al `catch`, muestra el error segun la regla comun y finaliza `loading`. No solicita tareas ni asigna un usuario corrupto al saludo. El servicio rechaza los tipos incompatibles con un mensaje que indica cerrar la sesion e ingresar nuevamente; para JSON invalido se muestra el mensaje de parseo. No limpia automaticamente `sessionStorage` ni redirige por ese error. |
++| Fallo de borrado al cerrar sesion, o rechazo de navegacion | `logout()` captura el error, lo muestra en dashboard y finaliza la carga. No navega si el borrado falla. No garantiza limpiar todas las claves si el almacenamiento impide una operacion. |
+ 
+ Ejemplo de body de error de la
+ [prueba que simula `503`](../src/app/dashboard/dashboard.component.spec.ts#L86):
+@@ -339,15 +353,15 @@ permisos insuficientes o indisponibilidad; si sus errores siempre incluyen
+ `detail`; y cual es el esquema efectivo de tareas. No se deducen esas garantias
+ a partir de la interfaz TypeScript.
+ 
+-Fuentes: [lectura de sesion fuera del try](../src/app/dashboard/dashboard.component.ts#L36),
+-[procesamiento y catch](../src/app/dashboard/dashboard.component.ts#L43),
++Fuentes: [servicio de sesion](../src/app/services/session.service.ts),
++[procesamiento y catch](../src/app/dashboard/dashboard.component.ts#L49),
+ [extractor](../src/app/utils/http-error-message.ts#L5),
+ [renderizado](../src/app/dashboard/dashboard.component.html#L18).
+ 
+ ### 5. Notas de seguridad relevantes
+ 
+-- El token se lee desde `localStorage` y se envia por HTTP al puerto local 8000.
+-  No hay servicio central de sesion ni validacion local de firma/expiracion.
++- El token se lee mediante `SessionService` desde `sessionStorage` y se envia
++  por HTTP al puerto local 8000. No hay validacion local de firma/expiracion.
+   JavaScript del mismo origen puede acceder al almacenamiento.
+ - El query `owner` proviene del usuario guardado, que puede alterarse en el
+   navegador. La UI no verifica que el servidor autorice ese filtro.
+@@ -357,17 +371,18 @@ Fuentes: [lectura de sesion fuera del try](../src/app/dashboard/dashboard.compon
+   pueden modificar el query. No documentar codificacion que no existe.
+ - El dashboard usa interpolacion para error, titulo, descripcion y etiqueta,
+   no `[innerHTML]`; no debe confundirse con el mensaje HTML del login.
+-- **Cerrar sesión** solo elimina `workshop_token` y `workshop_user` de
+-  `localStorage` y navega a `/login`; conserva `workshop_preferences`.
++- **Cerrar sesión** delega a `SessionService.clear()`, que elimina
++  `workshop_token` y `workshop_user` de `sessionStorage` y `localStorage`, y
++  navega a `/login`; conserva `workshop_preferences`.
+   No consume un endpoint de logout, revocacion o refresh y no invalida el token
+   en el servidor. **Pregunta abierta:** politica real de expiracion/revocacion.
+ - Las rutas no declaran guards; la comprobacion de token esta en `ngOnInit`.
+   Esta comprobacion del cliente no reemplaza la autorizacion de la API.
+ 
+-Fuentes: [lectura del token](../src/app/dashboard/dashboard.component.ts#L37),
++Fuentes: [lectura de sesion](../src/app/dashboard/dashboard.component.ts#L43),
+ [Bearer y query](../src/app/services/tasks.service.ts#L11),
+ [interpolacion](../src/app/dashboard/dashboard.component.html#L18),
+-[logout](../src/app/dashboard/dashboard.component.ts#L62),
++[logout](../src/app/dashboard/dashboard.component.ts#L67),
+ [rutas](../src/app/app.routes.ts#L3).
+ 
+ ## Documentos y fuentes consultados
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\docs\\TESTING.md" "b/docs\\TESTING.md"
+index c62f938..633d086 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\docs\\TESTING.md"
++++ "b/docs\\TESTING.md"
+@@ -1,5 +1,69 @@
+ # Pruebas del flujo de login y tareas
+ 
++## Actualizacion de implementacion H-01 — 19/10/2026
++
++**Veredicto actual: FAIL; H-01 no cerrado y H-03 no iniciado.** Se implemento
++la mitigacion de persistencia del plan aprobado, sin modificar HTTP ni
++dependencias. El informe anterior se conserva abajo como evidencia historica,
++no como descripcion del almacenamiento actual.
++
++Diff conceptual de H-01: nuevo servicio tipado para token/usuario en
++`sessionStorage`, limpieza legacy sin migracion, componentes conectados al
++servicio, errores de almacenamiento visibles y logout que conserva preferencias.
++El parseo de sesion queda dentro del manejo de errores del dashboard: las tres
++regresiones BUG-03 ahora pasan como consecuencia directa de esa frontera.
++BUG-01, BUG-02 y BUG-04 siguen fallando; no se modificaron sus expectativas.
++La sesion continua accesible a JavaScript y no se incorpora cookie `HttpOnly`.
++
++| flujo | caso | tipo | resultado esperado / observado |
++|---|---|---|---|
++| Login -> tareas -> logout | Nueva instancia de dashboard tras login | Caracterizacion antes/despues | Mismos POST, GET, propietario, Bearer, etiquetas y logout. 4/4 antes y 4/4 despues. Cambia deliberadamente el almacenamiento. |
++| Sesion | Guardado, lectura, instancia nueva, claves legacy y preferencias | Correccion | Token/usuario solo en sessionStorage; sin migrar legacy; preferencias persistentes intactas. 16/16 tests del servicio pasan. |
++| Sesion y UI | JSON de usuario corrupto, fallo de lectura/escritura/borrado, navegacion rechazada | Error | Error explicito y estados finalizados; pruebas propias del item pasan. La suite filtrada cuenta 26 aprobados y 59 no seleccionados. |
++| Navegador | Login, recarga misma pestaña y logout | Correccion | Almacenamiento y saludo tras recarga comprobados; logout elimina ambas ubicaciones sin borrar preferencias. Asersiones complementarias pasan. |
++| Navegador | Tarea Requirement visible tras login | Regresion preexistente BUG-05 | Falla otra vez al esperar 7000 ms; impide aprobar el flujo completo. |
++
++Todas las ejecuciones se realizaron desde:
++
++```text
++C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend
++```
++
++| Comando realmente ejecutado | Salida | Resultado y evidencia |
++|---|---|---|
++| `npm test -- src/app/auth-tasks-flow.spec.ts` antes de producto | 0 | 4 aprobados; [caracterizacion-antes.txt](../EVIDENCIAS/implementacion-H-01/caracterizacion-antes.txt). |
++| `npm test` antes de producto | 1 | 71 aprobados, 6 fallidos, 0 omitidos; [suite-antes.txt](../EVIDENCIAS/implementacion-H-01/suite-antes.txt). |
++| `npm test -- src/app/services/session.service.spec.ts` antes de crear servicio | 1 | Fase roja: modulo inexistente, sin tests ejecutados; [correccion-antes.txt](../EVIDENCIAS/implementacion-H-01/correccion-antes.txt). |
++| `npm test -- src/app/services/session.service.spec.ts src/app/auth-tasks-flow.spec.ts` despues | 0 | 20 aprobados, 0 fallidos/omitidos; [correccion-despues.txt](../EVIDENCIAS/implementacion-H-01/correccion-despues.txt). |
++| `npm test -- src/app/services/session.service.spec.ts src/app/auth-tasks-flow.spec.ts src/app/login/login.component.spec.ts src/app/dashboard/dashboard.component.spec.ts -t 'H-01\|BUG-03\|Login -> tasks'` | 0 | 26 aprobados, 59 no seleccionados por filtro, no es aprobacion de suite completa; [pruebas-item.txt](../EVIDENCIAS/implementacion-H-01/pruebas-item.txt). |
++| `npm run test:coverage -- --coverage.reportOnFailure --coverage.reportsDirectory=EVIDENCIAS/implementacion-H-01/cobertura` | 1 | 93 aprobados, 3 fallidos, 0 omitidos. Cobertura global 34.85% incluye copias de evidencia y JS de informes anteriores: no es una medicion exclusiva de producto; [suite-despues.txt](../EVIDENCIAS/implementacion-H-01/suite-despues.txt). |
++| `npm run test:coverage -- --coverage.reportOnFailure '--coverage.include=src/**/*.ts' --coverage.reportsDirectory=EVIDENCIAS/implementacion-H-01/cobertura-src` | 1 | 93 aprobados, 3 fallidos, 0 omitidos. Fuente: 91.11% lineas/statements; 92.77% ramas; 95.45% funciones; [cobertura-src.txt](../EVIDENCIAS/implementacion-H-01/cobertura-src.txt), [HTML](../EVIDENCIAS/implementacion-H-01/cobertura-src/index.html), [JSON](../EVIDENCIAS/implementacion-H-01/cobertura-src/coverage-summary.json). |
++| `npm run build` | 0 | Compila; advertencia CommonJS Lodash conservada; [build.txt](../EVIDENCIAS/implementacion-H-01/build.txt). |
++| `npm start -- --port 4317`, comprobacion con navegador integrado | No aplica: herramienta sin exit code de test | Readiness HTTP 200. Tarea no visible en 7000 ms; comprobaciones de sesion/recarga/logout adicionales correctas; [navegador.txt](../EVIDENCIAS/implementacion-H-01/navegador.txt). Servidor detenido. |
++
++El servicio y ambos componentes modificados alcanzan **100% de lineas** en la
++medicion de fuente; cumple el minimo 85%, sin alterar configuracion, exclusiones
++persistentes, umbrales ni tests fallidos. El selector de cobertura mide `src`,
++no oculta fallos: la suite completa sigue devolviendo 1. El helper de navegador
++no es un test Vitest y su resultado se informa por separado.
++
++Se conserva [H-01.diff](../EVIDENCIAS/implementacion-H-01/H-01.diff) contra las
++instantaneas locales previas a H-01, no contra HEAD (que ya tenia cambios de
++H-02). El cierre y siguiente paso se mantienen en
++[HALLAZGOS.md](../HALLAZGOS.md). No se ejecutaron auditorias/instalaciones ni se
++cambio Lodash: H-03 esta bloqueado por la secuencia solicitada.
++
++Pendientes: resolver/autorizar en una tarea separada los fallos ajenos al plan,
++volver a verificar el flujo completo y solo entonces decidir el cierre de
++H-01 y continuar con H-03. No se omiten tests ni se inventa una exencion del gate.
++
++Fuentes de esta actualizacion: [PLAN.md](../PLAN.md),
++[ENDPOINTS.md](ENDPOINTS.md), [GOOD_PRACTICES.md](GOOD_PRACTICES.md),
++[REGLAS.md](../REGLAS.md), [HALLAZGOS.md](../HALLAZGOS.md), codigo/pruebas
++del servicio, login, dashboard y flujo, y ejecuciones enlazadas.
++
++## Informe historico anterior a H-01
++
+ ## Alcance y resultado
+ 
+ Fecha: **19/10/2026**. Directorio de ejecucion de todos los comandos:
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\HALLAZGOS.md" b/HALLAZGOS.md
+index 529d99d..d00179b 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\HALLAZGOS.md"
++++ b/HALLAZGOS.md
+@@ -17,7 +17,7 @@ confirmar la presencia del patron descrito. Una ausencia se registraria como
+ 
+ | id | hallazgo | tipo | explicacion | evidencia (archivo:linea) | severidad | estado |
+ |---|---|---|---|---|---|---|
+-| H-01 | Token de sesion persistido en `localStorage` | Vulnerabilidad | El token queda disponible para JavaScript del mismo origen y persiste al recargar o cerrar la ventana. Si un script de ese origen se compromete, podria extraerlo y reutilizarlo. Se confirma el almacenamiento, no una via de robo ni su explotacion. El cierre de sesion solo lo elimina localmente. | [src/app/login/login.component.ts:48](src/app/login/login.component.ts#L48); [src/app/dashboard/dashboard.component.ts:37](src/app/dashboard/dashboard.component.ts#L37); [src/app/dashboard/dashboard.component.ts:63](src/app/dashboard/dashboard.component.ts#L63) | alta | Pendiente |
++| H-01 | Token de sesion persistido en `localStorage` | Vulnerabilidad | Implementada la mitigacion aprobada: `SessionService` usa `sessionStorage`, elimina claves legacy sin migrar y conserva preferencias; JavaScript aun puede leer el token. **Cierre bloqueado:** 26 pruebas propias pasan, pero suite general y navegador siguen FAIL; no se declara Resuelto ni se avanza a H-03. [Pruebas](EVIDENCIAS/implementacion-H-01/pruebas-item.txt), [diff local](EVIDENCIAS/implementacion-H-01/H-01.diff), [bloqueo de navegador](EVIDENCIAS/implementacion-H-01/navegador.txt). | [src/app/services/session.service.ts](src/app/services/session.service.ts); [src/app/services/session.service.spec.ts](src/app/services/session.service.spec.ts); [src/app/auth-tasks-flow.spec.ts](src/app/auth-tasks-flow.spec.ts) | alta | Pendiente |
+ | H-02 | Dependencia directa `axios 0.31.0` en las llamadas HTTP | Sugerencia | La version declarada se usaba para autenticar y consultar tareas. **Resuelto:** `npm audit` reporto avisos de severidad alta para la version; se retiro Axios y ambas llamadas se migraron a servicios con `HttpClient` de Angular, sin agregar dependencias y conservando los contratos. La auditoria aun reporta vulnerabilidades de otras dependencias, fuera del alcance de H-02. | [package.json:13](package.json#L13); [src/app/services/auth.service.ts:13](src/app/services/auth.service.ts#L13); [src/app/services/tasks.service.ts:14](src/app/services/tasks.service.ts#L14) | media | Resuelto |
+ | H-03 | Dependencia directa `lodash 4.17.21` y uso de `merge` | Sugerencia | La version declarada se usa para combinar preferencias locales. `npm audit` reporta avisos de severidad alta para la version declarada; la aplicabilidad al uso de `merge` y su remediacion no se evaluaron en este alcance. Retirarla sin preservar la mezcla puede alterar las preferencias. | [package.json:19](package.json#L19); [src/app/login/login.component.ts:5](src/app/login/login.component.ts#L5); [src/app/login/login.component.ts:25](src/app/login/login.component.ts#L25); [src/app/login/login.component.ts:26](src/app/login/login.component.ts#L26) | media | Pendiente |
+ | H-04 | Mensaje dinamico construido como HTML y mostrado con `[innerHTML]` | Refactor | El usuario ingresado y el mensaje del error se concatenan con marcado HTML. Texto no confiable puede interpretarse como marcado permitido y alterar la presentacion del error. Angular sanitiza este binding; no se observa una omision de esa proteccion ni se confirma XSS explotable. | [src/app/login/login.component.ts:57](src/app/login/login.component.ts#L57); [src/app/login/login.component.html:39](src/app/login/login.component.html#L39) | media | Pendiente |
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\PLAN.md" b/PLAN.md
+index f946fae..d156a69 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\PLAN.md"
++++ b/PLAN.md
+@@ -15,10 +15,12 @@ Lodash no cambian automaticamente la severidad media registrada de H-03.
+ Los defectos BUG-01 a BUG-05 del informe de pruebas no se incorporan como
+ items nuevos ni se usan para sustituir el backlog indicado por el usuario.
+ 
+-**Este plan nuevo esta pendiente de revision humana.** La revision anterior
++**Aprobacion:** el usuario confirmo expresamente el 19/10/2026 que este plan
++fue revisado y aprobado y solicito su implementacion en orden. No indico nombre
++del revisor de esta tanda. La revision anterior
+ registrada por Michael Teran el 19/10/2026 correspondia solamente a H-02 y no
+-constituye aprobacion de H-01/H-03. En esta tarea solo se reemplaza este
+-documento: no se modifica codigo, contratos ni estados de la matriz.
++constituye aprobacion de H-01/H-03; la autorizacion de esta tanda es el mensaje
++posterior del usuario. El alcance propuesto a continuacion se mantiene.
+ 
+ ## Item: H-01 — Token de sesion persistido en localStorage
+ 
+diff --git "a/src\\app\\services\\session.service.ts" "b/src\\app\\services\\session.service.ts"
+new file mode 100644
+index 0000000..fb2f642
+--- /dev/null
++++ "b/src\\app\\services\\session.service.ts"
+@@ -0,0 +1,48 @@
++import { Injectable } from '@angular/core';
++import { AuthUser } from '../models/auth.models';
++
++const TOKEN_KEY = 'workshop_token';
++const USER_KEY = 'workshop_user';
++
++interface StoredSession {
++  token: string;
++  user: Partial<AuthUser>;
++}
++
++@Injectable({ providedIn: 'root' })
++export class SessionService {
++  initialize(): void {
++    localStorage.removeItem(TOKEN_KEY);
++    localStorage.removeItem(USER_KEY);
++  }
++
++  save(token: string, user: AuthUser): void {
++    this.initialize();
++    sessionStorage.setItem(TOKEN_KEY, token);
++    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
++  }
++
++  read(): StoredSession | null {
++    this.initialize();
++    const token = sessionStorage.getItem(TOKEN_KEY);
++    if (!token) return null;
++
++    const user: unknown = JSON.parse(sessionStorage.getItem(USER_KEY) || '{}');
++    if (!this.isStoredUser(user)) {
++      throw new Error('Los datos de sesion guardados no son validos. Cierre la sesion e ingrese nuevamente.');
++    }
++    return { token, user };
++  }
++
++  clear(): void {
++    sessionStorage.removeItem(TOKEN_KEY);
++    sessionStorage.removeItem(USER_KEY);
++    this.initialize();
++  }
++
++  private isStoredUser(user: unknown): user is Partial<AuthUser> {
++    return typeof user === 'object' && user !== null && !Array.isArray(user)
++      && (!('username' in user) || typeof user.username === 'string')
++      && (!('displayName' in user) || typeof user.displayName === 'string');
++  }
++}
+diff --git "a/src\\app\\services\\session.service.spec.ts" "b/src\\app\\services\\session.service.spec.ts"
+new file mode 100644
+index 0000000..2ae6a9d
+--- /dev/null
++++ "b/src\\app\\services\\session.service.spec.ts"
+@@ -0,0 +1,103 @@
++import '@angular/compiler';
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { SessionService } from './session.service';
++
++function memoryStorage() {
++  const values = new Map<string, string>();
++  return {
++    getItem: vi.fn((key: string) => values.get(key) ?? null),
++    setItem: vi.fn((key: string, value: string) => { values.set(key, String(value)); }),
++    removeItem: vi.fn((key: string) => { values.delete(key); })
++  };
++}
++
++describe('H-01 SessionService', () => {
++  let persistent: ReturnType<typeof memoryStorage>;
++  let temporary: ReturnType<typeof memoryStorage>;
++  let service: SessionService;
++  const user = { username: 'student', displayName: 'Student' };
++
++  beforeEach(() => {
++    persistent = memoryStorage();
++    temporary = memoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', temporary);
++    persistent.setItem('workshop_preferences', '{"theme":"dark"}');
++    service = new SessionService();
++  });
++
++  afterEach(() => vi.unstubAllGlobals());
++
++  it('stores only token/user in sessionStorage and survives a new service instance', () => {
++    service.save('test-token', user);
++    expect(new SessionService().read()).toEqual({ token: 'test-token', user });
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(temporary.getItem('workshop_user')).toBe(JSON.stringify(user));
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('removes legacy credentials on initialization without migrating them', () => {
++    persistent.setItem('workshop_token', 'legacy-token');
++    persistent.setItem('workshop_user', JSON.stringify(user));
++    service.initialize();
++    expect(service.read()).toBeNull();
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('clears both locations on logout without changing preferences', () => {
++    service.save('test-token', user);
++    persistent.setItem('workshop_token', 'legacy-token');
++    persistent.setItem('workshop_user', JSON.stringify(user));
++    service.clear();
++    expect(service.read()).toBeNull();
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(temporary.getItem('workshop_user')).toBeNull();
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('keeps the existing empty-owner behavior when no user was stored', () => {
++    temporary.setItem('workshop_token', 'test-token');
++    expect(service.read()).toEqual({ token: 'test-token', user: {} });
++  });
++
++  it.each(['{', 'null', '[]', '"student"', '{"username":42}', '{"displayName":42}'])(
++    'rejects corrupt stored user %s instead of returning a success-shaped session', saved => {
++      temporary.setItem('workshop_token', 'test-token');
++      temporary.setItem('workshop_user', saved);
++      expect(() => service.read()).toThrow();
++    }
++  );
++
++  it('accepts the documented optional display name', () => {
++    service.save('test-token', { username: 'student' });
++    expect(service.read()).toEqual({ token: 'test-token', user: { username: 'student' } });
++  });
++
++  it('propagates storage read failures', () => {
++    temporary.getItem.mockImplementation(() => { throw new Error('Read unavailable'); });
++    expect(() => service.read()).toThrow('Read unavailable');
++  });
++
++  it.each(['workshop_token', 'workshop_user'])('propagates failed writes of %s', key => {
++    temporary.setItem.mockImplementation(name => {
++      if (name === key) throw new Error('Write unavailable');
++    });
++    expect(() => service.save('test-token', user)).toThrow('Write unavailable');
++  });
++
++  it('propagates legacy cleanup failures', () => {
++    persistent.removeItem.mockImplementation(() => { throw new Error('Cleanup unavailable'); });
++    expect(() => service.initialize()).toThrow('Cleanup unavailable');
++    expect(() => service.read()).toThrow('Cleanup unavailable');
++    expect(() => service.save('test-token', user)).toThrow('Cleanup unavailable');
++  });
++
++  it('propagates session removal failures', () => {
++    temporary.removeItem.mockImplementation(() => { throw new Error('Removal unavailable'); });
++    expect(() => service.clear()).toThrow('Removal unavailable');
++  });
++});

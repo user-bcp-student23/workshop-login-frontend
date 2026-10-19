@@ -1,0 +1,150 @@
+import '@angular/compiler';
+import { HttpClient, HttpErrorResponse, HttpEvent, HttpRequest, HttpResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DashboardComponent } from './dashboard/dashboard.component';
+import { LoginComponent } from './login/login.component';
+import { AuthService } from './services/auth.service';
+import { TasksService } from './services/tasks.service';
+
+describe('Login -> tasks -> logout with real services and an in-memory HTTP transport', () => {
+  let values: Map<string, string>;
+  let requests: HttpRequest<unknown>[];
+  let replies: Subject<HttpEvent<unknown>>[];
+  let login: LoginComponent;
+  let dashboard: DashboardComponent;
+  let navigate: ReturnType<typeof vi.fn>;
+  let http: HttpClient;
+  let router: Router;
+
+  beforeEach(() => {
+    values = new Map();
+    requests = [];
+    replies = [];
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, String(value)),
+      removeItem: (key: string) => values.delete(key)
+    });
+    http = new HttpClient({
+      handle: (request: HttpRequest<unknown>) => {
+        const reply = new Subject<HttpEvent<unknown>>();
+        requests.push(request);
+        replies.push(reply);
+        return reply;
+      }
+    });
+    navigate = vi.fn().mockResolvedValue(true);
+    router = { navigate } as unknown as Router;
+    login = new LoginComponent(router, new AuthService(http));
+    dashboard = new DashboardComponent(router, new TasksService(http));
+    login.username = 'student';
+    login.password = 'Workshop123!';
+  });
+
+  afterEach(() => {
+    replies.forEach(reply => reply.complete());
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('logs in, reads the persisted session to load tasks, then logs out', async () => {
+    const signingIn = login.login();
+    expect(login.busy).toBe(true);
+    expect(requests[0].method).toBe('POST');
+    expect(requests[0].url).toBe('http://localhost:8080/auth/login');
+    expect(requests[0].body).toEqual({
+      username: 'student', password: 'Workshop123!', client: 'angular-workshop'
+    });
+    expect(requests[0].timeout).toBe(5000);
+    expect(requests[0].headers.has('Authorization')).toBe(false);
+    replies[0].next(new HttpResponse({
+      status: 200,
+      body: { token: 'test-token', user: { username: 'student', displayName: 'Student' } }
+    }));
+    await signingIn;
+    expect(login.busy).toBe(false);
+    expect(navigate).toHaveBeenLastCalledWith(['/dashboard']);
+    expect(values.get('workshop_token')).toBe('test-token');
+
+    dashboard = new DashboardComponent(router, new TasksService(http));
+    const loading = dashboard.ngOnInit();
+    expect(dashboard.loading).toBe(true);
+    expect(requests[1].method).toBe('GET');
+    expect(requests[1].url).toBe('http://localhost:8000/api/tasks?owner=student');
+    expect(requests[1].headers.get('Authorization')).toBe('Bearer test-token');
+    expect(requests[1].body).toBeNull();
+    replies[1].next(new HttpResponse({
+      status: 200,
+      body: [{
+        title: 'Requirement', description: '', status: 'TODO', priority: 'HIGH', owner: 'student'
+      }]
+    }));
+    await loading;
+    expect(dashboard.error).toBe('');
+    expect(dashboard.loading).toBe(false);
+    expect(dashboard.visibleTasks).toHaveLength(1);
+    expect(dashboard.visibleTasks[0].label).toBe('HIGH · STUDENT');
+    expect(dashboard.statusLabel(dashboard.visibleTasks[0].status)).toBe('Por hacer');
+
+    const preferences = values.get('workshop_preferences');
+    await dashboard.logout();
+    expect(values.has('workshop_token')).toBe(false);
+    expect(values.has('workshop_user')).toBe(false);
+    expect(values.get('workshop_preferences')).toBe(preferences);
+    expect(navigate).toHaveBeenLastCalledWith(['/login']);
+    await dashboard.ngOnInit();
+    expect(requests).toHaveLength(2);
+  });
+
+
+  it('documents the absence of a task timeout without inventing a five-second limit', async () => {
+    vi.useFakeTimers();
+    values.set('workshop_token', 'test-token');
+    const loading = dashboard.ngOnInit();
+    expect(requests[0].timeout).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(dashboard.loading).toBe(true);
+    replies[0].next(new HttpResponse({ status: 200, body: [] }));
+    await loading;
+    expect(dashboard.loading).toBe(false);
+  });
+
+  it('sends nonempty credentials unchanged instead of trimming them', async () => {
+    login.username = ' student ';
+    login.password = ' password ';
+    const signingIn = login.login();
+    expect(requests[0].body).toEqual({
+      username: ' student ', password: ' password ', client: 'angular-workshop'
+    });
+    replies[0].next(new HttpResponse({ status: 200, body: {} }));
+    await signingIn;
+    expect(navigate).not.toHaveBeenCalled();
+    expect(login.busy).toBe(false);
+  });
+
+  it('surfaces a token rejected by tasks after login, then allows local logout', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const signingIn = login.login();
+    replies[0].next(new HttpResponse({
+      status: 200,
+      body: { token: 'invalid-token', user: { username: 'student' } }
+    }));
+    await signingIn;
+    const loading = dashboard.ngOnInit();
+    expect(requests[1].headers.get('Authorization')).toBe('Bearer invalid-token');
+    replies[1].error(new HttpErrorResponse({
+      status: 401, error: { detail: 'Token invalido' }
+    }));
+    await loading;
+    expect(dashboard.error).toBe('Token invalido');
+    expect(dashboard.loading).toBe(false);
+    expect(navigate).toHaveBeenLastCalledWith(['/dashboard']);
+    expect(values.get('workshop_token')).toBe('invalid-token');
+    await dashboard.logout();
+    expect(values.has('workshop_token')).toBe(false);
+    expect(navigate).toHaveBeenLastCalledWith(['/login']);
+  });
+});

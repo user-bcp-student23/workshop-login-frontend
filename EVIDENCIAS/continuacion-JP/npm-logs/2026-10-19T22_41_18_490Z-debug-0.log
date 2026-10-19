@@ -1,0 +1,118 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.19.1
+2 info using node@v26.9.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\.npmrc
+5 silly config load:file:C:\Users\Usuario\.npmrc
+6 silly config load:file:C:\Users\Usuario\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm install
+8 verbose argv "install" "--package-lock-only" "--ignore-scripts" "--logs-dir" "EVIDENCIAS\\continuacion-JP\\npm-logs" "--loglevel" "verbose"
+9 verbose logfile logs-max:10 dir:C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-
+10 verbose logfile C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4395630592 maxSize:1098907648 maxEntrySize:549453824
+13 silly idealTree buildDeps
+14 silly fetch manifest lodash@4.18.1
+15 silly packumentCache full:https://registry.npmjs.org/lodash cache-miss
+16 http cache https://registry.npmjs.org/lodash 16ms (cache hit)
+17 silly packumentCache full:https://registry.npmjs.org/lodash set size:247678 disposed:false
+18 silly placeDep ROOT lodash@4.18.1 REPLACE for: workshop-login-frontend@0.1.0 want: 4.18.1
+19 silly fetch manifest vitest@^4.0.8
+20 silly packumentCache full:https://registry.npmjs.org/vitest cache-miss
+21 http cache https://registry.npmjs.org/vitest 13ms (cache hit)
+22 silly packumentCache full:https://registry.npmjs.org/vitest set size:2297925 disposed:false
+23 silly fetch manifest @edge-runtime/vm@*
+24 silly packumentCache full:https://registry.npmjs.org/@edge-runtime%2fvm cache-miss
+25 http cache https://registry.npmjs.org/@edge-runtime%2fvm 8ms (cache hit)
+26 silly packumentCache full:https://registry.npmjs.org/@edge-runtime%2fvm set size:269934 disposed:false
+27 silly fetch manifest @opentelemetry/api@^1.9.0
+28 silly packumentCache full:https://registry.npmjs.org/@opentelemetry%2fapi cache-miss
+29 http cache https://registry.npmjs.org/@opentelemetry%2fapi 8ms (cache hit)
+30 silly packumentCache full:https://registry.npmjs.org/@opentelemetry%2fapi set size:272509 disposed:false
+31 silly fetch manifest @types/node@^20.0.0 || ^22.0.0 || >=24.0.0
+32 silly packumentCache full:https://registry.npmjs.org/@types%2fnode cache-miss
+33 http cache https://registry.npmjs.org/@types%2fnode 26ms (cache hit)
+34 silly packumentCache full:https://registry.npmjs.org/@types%2fnode set size:11180437 disposed:false
+35 silly fetch manifest @vitest/browser-playwright@4.1.12
+36 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-playwright cache-miss
+37 http cache https://registry.npmjs.org/@vitest%2fbrowser-playwright 11ms (cache hit)
+38 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-playwright set size:172080 disposed:false
+39 silly fetch manifest playwright@*
+40 silly packumentCache full:https://registry.npmjs.org/playwright cache-miss
+41 http cache https://registry.npmjs.org/playwright 34ms (cache hit)
+42 silly packumentCache full:https://registry.npmjs.org/playwright set size:16915243 disposed:false
+43 silly fetch manifest @vitest/browser-preview@4.1.12
+44 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-preview cache-miss
+45 http cache https://registry.npmjs.org/@vitest%2fbrowser-preview 11ms (cache hit)
+46 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-preview set size:164802 disposed:false
+47 silly fetch manifest @vitest/browser-webdriverio@^4.1.11
+48 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-webdriverio cache-miss
+49 http cache https://registry.npmjs.org/@vitest%2fbrowser-webdriverio 6ms (cache hit)
+50 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-webdriverio set size:144024 disposed:false
+51 silly fetch manifest vitest@4.1.11
+52 silly packumentCache full:https://registry.npmjs.org/vitest cache-miss
+53 http cache https://registry.npmjs.org/vitest 11ms (cache hit)
+54 silly packumentCache full:https://registry.npmjs.org/vitest set size:2297925 disposed:false
+55 silly fetch manifest @vitest/browser-playwright@4.1.11
+56 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-playwright cache-hit
+57 silly fetch manifest @vitest/browser-preview@4.1.11
+58 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-preview cache-hit
+59 silly fetch manifest @vitest/browser-webdriverio@4.1.11
+60 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser-webdriverio cache-hit
+61 silly fetch manifest webdriverio@*
+62 silly packumentCache full:https://registry.npmjs.org/webdriverio cache-miss
+63 http cache https://registry.npmjs.org/webdriverio 23ms (cache hit)
+64 silly packumentCache full:https://registry.npmjs.org/webdriverio set size:3292000 disposed:false
+65 silly fetch manifest puppeteer-core@>=24 <26
+66 silly packumentCache full:https://registry.npmjs.org/puppeteer-core cache-miss
+67 http cache https://registry.npmjs.org/puppeteer-core 10ms (cache hit)
+68 silly packumentCache full:https://registry.npmjs.org/puppeteer-core set size:1598572 disposed:false
+69 silly fetch manifest @vitest/coverage-istanbul@4.1.11
+70 silly packumentCache full:https://registry.npmjs.org/@vitest%2fcoverage-istanbul cache-miss
+71 http cache https://registry.npmjs.org/@vitest%2fcoverage-istanbul 8ms (cache hit)
+72 silly packumentCache full:https://registry.npmjs.org/@vitest%2fcoverage-istanbul set size:728674 disposed:false
+73 silly fetch manifest @vitest/coverage-v8@4.1.11
+74 silly packumentCache full:https://registry.npmjs.org/@vitest%2fcoverage-v8 cache-miss
+75 http cache https://registry.npmjs.org/@vitest%2fcoverage-v8 8ms (cache hit)
+76 silly packumentCache full:https://registry.npmjs.org/@vitest%2fcoverage-v8 set size:565107 disposed:false
+77 silly fetch manifest @vitest/browser@4.1.11
+78 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser cache-miss
+79 http cache https://registry.npmjs.org/@vitest%2fbrowser 8ms (cache hit)
+80 silly packumentCache full:https://registry.npmjs.org/@vitest%2fbrowser set size:833008 disposed:false
+81 silly fetch manifest @vitest/ui@4.1.11
+82 silly packumentCache full:https://registry.npmjs.org/@vitest%2fui cache-miss
+83 http cache https://registry.npmjs.org/@vitest%2fui 9ms (cache hit)
+84 silly packumentCache full:https://registry.npmjs.org/@vitest%2fui set size:1319425 disposed:false
+85 silly fetch manifest happy-dom@*
+86 silly packumentCache full:https://registry.npmjs.org/happy-dom cache-miss
+87 http cache https://registry.npmjs.org/happy-dom 10ms (cache hit)
+88 silly packumentCache full:https://registry.npmjs.org/happy-dom set size:2567019 disposed:false
+89 silly fetch manifest jsdom@*
+90 silly packumentCache full:https://registry.npmjs.org/jsdom cache-miss
+91 http cache https://registry.npmjs.org/jsdom 9ms (cache hit)
+92 silly packumentCache full:https://registry.npmjs.org/jsdom set size:1093308 disposed:false
+93 silly fetch manifest canvas@^3.2.3
+94 silly packumentCache full:https://registry.npmjs.org/canvas cache-miss
+95 http cache https://registry.npmjs.org/canvas 8ms (cache hit)
+96 silly packumentCache full:https://registry.npmjs.org/canvas set size:353371 disposed:false
+97 silly placeDep node_modules/@angular-devkit/build-angular vitest@4.1.12 OK for: @angular/build@21.2.19 want: ^4.0.8
+98 verbose stack TypeError: Cannot read properties of null (reading 'children')
+98 verbose stack     at new PlaceDep (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\place-dep.js:300:32)
+98 verbose stack     at #buildDepStep (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\build-ideal-tree.js:1016:18)
+98 verbose stack     at async Arborist.buildIdealTree (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\build-ideal-tree.js:180:7)
+98 verbose stack     at async Arborist.reify (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:118:5)
+98 verbose stack     at async Install.exec (C:\Program Files\nodejs\node_modules\npm\lib\commands\install.js:158:5)
+98 verbose stack     at async Npm.exec (C:\Program Files\nodejs\node_modules\npm\lib\npm.js:193:9)
+98 verbose stack     at async module.exports (C:\Program Files\nodejs\node_modules\npm\lib\cli\entry.js:67:5)
+99 error Cannot read properties of null (reading 'children')
+100 silly unfinished npm timer reify 1792449679028
+101 silly unfinished npm timer reify:loadTrees 1792449679028
+102 silly unfinished npm timer idealTree:buildDeps 1792449679194
+103 silly unfinished npm timer idealTree:node_modules/@angular-devkit/build-angular/node_modules/@angular/build 1792449679224
+104 verbose cwd C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend
+105 verbose os Windows_NT 10.0.26200
+106 verbose node v26.9.0
+107 verbose npm  v11.19.1
+108 verbose exit 1
+109 verbose code 1
+110 error A complete log of this run can be found in: C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-debug-0.log

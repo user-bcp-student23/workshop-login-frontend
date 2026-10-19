@@ -1,0 +1,18 @@
+
+> workshop-login-frontend@0.1.0 test
+> vitest run src/app/services/session.service.spec.ts src/app/auth-tasks-flow.spec.ts src/app/login/login.component.spec.ts src/app/dashboard/dashboard.component.spec.ts -t H-01|BUG-03|Login -> tasks
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+
+ [32m✓[39m src/app/services/session.service.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/app/dashboard/dashboard.component.spec.ts [2m([22m[2m33 tests[22m[2m | [22m[33m28 skipped[39m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/app/login/login.component.spec.ts [2m([22m[2m32 tests[22m[2m | [22m[33m31 skipped[39m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/app/auth-tasks-flow.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m26 passed[39m[22m[2m | [22m[33m59 skipped[39m[90m (85)[39m
+[2m   Start at [22m 17:21:30
+[2m   Duration [22m 1.27s[2m (transform 196ms, setup 0ms, collect 2.13s, tests 46ms, environment 1ms, prepare 660ms)[22m
+
+Exit code: 0

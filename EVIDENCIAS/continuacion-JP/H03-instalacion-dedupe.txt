@@ -1,0 +1,3 @@
+npm error Cannot read properties of null (reading 'children')
+npm error A complete log of this run can be found in: C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_37_109Z-debug-0.log
+Exit code: 1

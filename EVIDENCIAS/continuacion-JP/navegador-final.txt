@@ -1,0 +1,53 @@
+19/10/2026 - Validacion final con Lodash 4.18.1.
+Directorio: raiz del repositorio workshop-login-frontend.
+Servidor: npm start -- --port 4317; readiness final HTTP 200.
+Primer probe previo a acabar el build: conexion rechazada, no se dio por listo.
+Herramienta: navegador integrado, runPlaywrightCode.
+Exit code: no aplica (no hay proceso de test CLI).
+Fixtures HTTP, no backends reales.
+
+Tras npm ci, la pagina anterior ya no existia. Se abrio pagina nueva:
+34a56b7d-f4ab-47fd-a7d3-e0ce05b6c2df.
+
+H-03, primer recorrido despues de actualizar Lodash: PASS.
+- Login valido, GET con Bearer test-token, tarjeta Requirement visible en 7000 ms.
+- Recarga y tarjeta de nuevo visible.
+- Preferencias guardadas {"theme":"dark","showTips":false,"view":{"columns":2}}
+  conservadas, y default compact:false agregado.
+- Logout mantiene preferencias y borra sesion.
+
+Comprobacion adicional BUG-01 / BUG-05 (login):
+- POST 200 con {"token":"test-token"}.
+- Antes de notificar la vista: FAIL a 5000 ms esperando el mensaje.
+  Snapshot: boton Ingresando... deshabilitado, sin mensaje, aunque console.error
+  mostraba Error: La respuesta de autenticacion no es valida.
+- Se escribio prueba roja: BUG-05-login-antes.txt.
+- Se corrigio la misma frontera asincrona con markForCheck en finally del login.
+- Despues: PASS. Mensaje "La respuesta de autenticacion no es valida." visible
+  en 5000 ms, boton Ingresar habilitado, token no persistido.
+  El console.error registrado es el manejo esperado del rechazo, no un fallo
+  oculto del test.
+
+Recorrido completo repetido despues del ultimo cambio: PASS.
+- POST http://localhost:8080/auth/login -> 200 con token/user validos.
+- GET http://localhost:8000/api/tasks?owner=student -> 200 con Requirement.
+- Asercion Authorization === Bearer test-token.
+- Formulario real -> dashboard -> Requirement visible (timeout 7000 ms).
+- Recarga -> Requirement visible (timeout 7000 ms).
+- Preferencias dark, showTips:false, compact:false, view.columns:2 intactas.
+- Logout -> /login; token/user borrados de sessionStorage, preferencias intactas.
+
+Errores de tareas adicionales en navegador: PASS.
+- Sembrar sessionStorage token/user, GET 200 con {"data":[]}:
+  mensaje "La respuesta de tareas no es un arreglo valido." visible en 5000 ms.
+  Logout funciona.
+- Sembrar sesion, GET 200 con [{status:42,priority:"HIGH",owner:"student"}]:
+  mensaje "La respuesta de tareas contiene un estado no valido." visible en
+  5000 ms. Logout funciona.
+- Retirar interceptaciones y limpiar localStorage/sessionStorage al finalizar.
+
+Veredicto funcional con fixtures: PASS.
+Limites: no valida CORS, autorizacion, disponibilidad ni esquema real de servidores.
+No se instalo runner Playwright en el proyecto; codigo reusable del camino feliz
+en tests/browser-flows.mjs. Las pruebas de estado/errores son Vitest; las
+aserciones anteriores se ejecutaron con el navegador integrado.

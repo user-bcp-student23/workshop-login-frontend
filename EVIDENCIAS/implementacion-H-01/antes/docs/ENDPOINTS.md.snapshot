@@ -1,0 +1,407 @@
+# Endpoints externos consumidos por el frontend
+
+Este documento describe el codigo actual, no el comportamiento deseado del
+refactor. Solo se consumen los dos endpoints siguientes. Las URLs base viven en
+[environment.ts](../src/environments/environment.ts#L1); el arranque registra
+`provideHttpClient()` sin interceptores propios en
+[main.ts](../src/main.ts#L8). No se consultaron otros repositorios ni se hicieron
+peticiones a los backends para elaborar este documento.
+
+Los ejemplos reproducen valores de las pruebas del repositorio: son ejemplos
+verificables del contrato del cliente, **no capturas de respuestas reales de los
+servidores**. `test-token` es un valor ficticio de prueba, no una credencial
+utilizable. Las interfaces TypeScript describen lo esperado, pero no validan el
+JSON en ejecucion. Donde el frontend no permite confirmar un dato del servidor,
+se indica como **Pregunta abierta**.
+
+## Login — `POST http://localhost:8080/auth/login`
+
+### 1. Quien lo llama
+
+`LoginComponent.login()` llama a `AuthService.login(request)`. El servicio
+ejecuta un `HttpClient.post<LoginResponse>` y convierte el observable en promesa
+con `firstValueFrom`. La UI invoca el metodo al pulsar **Ingresar**.
+
+Antes de la peticion:
+
+- Limpia el mensaje anterior.
+- Si el usuario es `null`, `undefined`, vacio o solo espacios, muestra
+  **Ingrese un usuario.** y no solicita HTTP.
+- Si falta la contrasena con el mismo criterio, muestra
+  **Ingrese una contraseña.** y no solicita HTTP.
+- El recorte de espacios se usa solo para validar; se envian los valores
+  originales, sin `trim()`.
+- Durante la llamada, `busy = true`: el boton queda deshabilitado y muestra
+  **Ingresando...**.
+
+Fuentes: [componente](../src/app/login/login.component.ts#L32),
+[boton y mensaje](../src/app/login/login.component.html#L34),
+[servicio](../src/app/services/auth.service.ts#L11).
+
+### 2. Que envia
+
+| Ubicacion | Nombre | Tipo / valor | Procedencia y comportamiento |
+|---|---|---|---|
+| URL | `/auth/login` | Ruta fija | Base `http://localhost:8080` configurada en `environment.authApiUrl`. |
+| Header automatico | `Accept` | `application/json, text/plain, */*` | Lo agrega Angular si no se especifica otro. |
+| Header automatico | `Content-Type` | `application/json` | Angular lo infiere del cuerpo objeto y lo serializa como JSON. |
+| Header | `Authorization` | No se establece | Login no envia un Bearer desde este servicio. |
+| Body | `username` | `string` en `LoginRequest` | Valor del formulario; ejemplo de prueba: `student`. El estado del componente aun es `any`. |
+| Body | `password` | `string` en `LoginRequest` | Valor del formulario; ejemplo de laboratorio: `Workshop123!`. |
+| Body | `client` | `string`, valor enviado `angular-workshop` | Literal que agrega el componente; no proviene del usuario. |
+| Opcion del cliente | `timeout` | `5000` ms | No es un campo del body ni un header; limita la peticion de login. |
+
+No hay query params. No se activa `withCredentials` para enviar cookies
+cross-origin. No se configura un header XSRF propio; con el frontend en
+`http://localhost:4200` y el backend en el puerto 8080, el interceptor XSRF
+predeterminado de Angular no lo agrega porque los origenes son distintos
+([implementacion instalada](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1368)).
+Los headers administrados por el navegador (por ejemplo `Origin`) no se fijan en
+el servicio; el ejemplo no pretende ser una captura completa de red.
+
+Ejemplo de solicitud, con el body de
+[AuthService.spec](../src/app/services/auth.service.spec.ts#L13) y las credenciales
+de laboratorio publicadas en [README.md](../README.md):
+
+```http
+POST http://localhost:8080/auth/login
+Accept: application/json, text/plain, */*
+Content-Type: application/json
+
+{
+  "username": "student",
+  "password": "Workshop123!",
+  "client": "angular-workshop"
+}
+```
+
+Fuentes: [request tipado](../src/app/models/auth.models.ts#L1),
+[construccion del body](../src/app/login/login.component.ts#L42),
+[peticion y timeout](../src/app/services/auth.service.ts#L13),
+[URL base](../src/environments/environment.ts#L2).
+Los headers automaticos corresponden al backend HTTP de Angular instalado:
+[_module-chunk.mjs](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1075).
+
+### 3. Que espera recibir en exito
+
+**Codigo de estado:** no se exige `200` ni otro codigo concreto en el servicio.
+El transporte Angular trata `200 <= status < 300` como exito HTTP; el componente
+requiere ademas un cuerpo con `token` truthy. El servicio devuelve solo el body,
+no el status ni los headers. **Pregunta abierta:** que codigo de exito devuelve
+realmente el backend. Las pruebas de este endpoint simulan el cuerpo, sin fijar
+un codigo de respuesta.
+
+| Campo JSON | Tipo esperado | Uso real en el cliente |
+|---|---|---|
+| `token` | `string` | Se comprueba solo su valor truthy; se guarda como `workshop_token`. No se valida tipo, formato, firma o expiracion. |
+| `user` | Objeto `AuthUser` | Se serializa en `workshop_user`; su estructura no se comprueba antes de guardar. |
+| `user.username` | `string` | Dashboard lo usa como filtro `owner` y como alternativa para el saludo. |
+| `user.displayName` | `string` opcional | Dashboard lo prefiere para el saludo si es truthy. |
+
+Ejemplo exacto del cuerpo simulado en la
+[prueba de login exitoso](../src/app/login/login.component.spec.ts#L49):
+
+```json
+{
+  "token": "test-token",
+  "user": {
+    "username": "student",
+    "displayName": "Student"
+  }
+}
+```
+
+Con este cuerpo, el componente escribe token y usuario en `localStorage`,
+guarda tambien las preferencias bajo `workshop_preferences` y navega a
+`/dashboard`. El bloque `finally` vuelve a poner `busy = false`.
+Las preferencias son estado local y **no** son campos de esta respuesta.
+No se consume un wrapper `data`, un refresh token ni headers de respuesta.
+
+Fuentes: [response y usuario tipados](../src/app/models/auth.models.ts#L7),
+[persistencia y navegacion](../src/app/login/login.component.ts#L47),
+[saludo](../src/app/dashboard/dashboard.component.html#L6).
+El criterio HTTP y el tratamiento de JSON se verifican en el
+[transporte Angular instalado](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1123).
+
+### 4. Como reacciona ante errores
+
+Para un `HttpErrorResponse`, la funcion compartida busca primero un
+`error.message` del body que sea string no vacio, despues el mensaje tecnico del
+propio `HttpErrorResponse` y finalmente `Error desconocido`. Para otro `Error`
+usa su mensaje no vacio; para otros valores usa el fallback. El componente
+antepone **No se pudo autenticar a {username}.**, agrega un salto HTML y registra
+el error con `console.error`. En el `catch` no borra una sesion anterior.
+
+| Caso | Reaccion de la UI y sesion |
+|---|---|
+| Credenciales rechazadas, `401`/`403`, u otro error HTTP (`4xx`/`5xx`) | Sigue el manejo comun anterior; no hay ramas por status, reintento, redireccion de error ni limpieza de token. El boton vuelve a habilitarse al finalizar. |
+| Token invalido | No se envia token en login. Si el servidor devuelve uno no vacio pero invalido, el cliente lo guarda y navega; no lo detecta aqui. Su rechazo posterior se describe en tareas. |
+| Timeout de 5000 ms | Angular rechaza la peticion; se muestra el mensaje comun de autenticacion con el fallback tecnico disponible y `busy` vuelve a `false`. No hay texto de UI especifico para timeout ni reintento automatico. |
+| Red desconectada, CORS, fallo de conexion o cancelacion reportada por el transporte | Se procesa como error HTTP de transporte, normalmente con status `0`; se muestra el mensaje comun y se habilita el boton. La UI no distingue estas causas. |
+| HTTP exitoso, pero JSON invalido | Angular produce un error de parseo; entra al `catch`, muestra el mensaje comun y habilita el boton. |
+| Cuerpo nulo, sin token o con token falsy (por ejemplo `""`) | Muestra **El backend respondió sin token.** No escribe la sesion ni navega. Finaliza `busy`. |
+| Token truthy con `user` ausente/incompatible, o token con tipo incorrecto | No hay validacion runtime. Se intenta persistir y navegar; la UI puede llegar a dashboard con datos corruptos. No hay mensaje de contrato invalido garantizado. |
+| Falla al escribir `localStorage` o rechazo de la promesa de navegacion | Ocurre dentro del mismo `try`: muestra el error comun, lo registra y restaura `busy`. No revierte escrituras ya realizadas; puede quedar una sesion parcial. |
+
+Ejemplo de body de error de la
+[prueba con `401`](../src/app/login/login.component.spec.ts#L97):
+
+```json
+{
+  "message": "Credenciales inválidas"
+}
+```
+
+Produce el mensaje visible **No se pudo autenticar a student.** seguido de
+**Credenciales inválidas**. El `401` es simulado por esa prueba, no un codigo
+confirmado del backend. **Pregunta abierta:** codigos, cuerpos y textos reales de
+errores del servicio de autenticacion. Los errores sin body legible pueden
+mostrar texto tecnico de Angular, no necesariamente un mensaje amigable.
+
+Fuentes: [catch y finally](../src/app/login/login.component.ts#L55),
+[extraccion del mensaje](../src/app/utils/http-error-message.ts#L5),
+[parseo y timeout en Angular](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1123).
+El `catch` de carga inicial de preferencias solo registra
+`Preferences could not be loaded` en consola; no presenta un error en la UI
+([constructor](../src/app/login/login.component.ts#L23)).
+
+### 5. Notas de seguridad relevantes
+
+- Es un laboratorio local: el request contiene la contrasena y se envia a HTTP,
+  no a HTTPS. No usar credenciales reales ni publicar esta configuracion.
+- La sesion **sigue en `localStorage`**, no en memoria, `sessionStorage` ni cookie
+  `HttpOnly`. El componente guarda token, usuario y preferencias; no existe un
+  servicio central de sesion en el codigo actual.
+- El mensaje **sigue usando `[innerHTML]`**. Angular sanitiza ese binding por
+  defecto; no se observa `bypassSecurityTrustHtml`. No afirmar que se elimino el
+  HTML dinamico ni que se demostro un XSS: el mensaje aun concatena usuario y
+  contenido del backend y puede mostrar detalles internos.
+- No se valida criptograficamente el token ni se implementa renovacion. No se
+  puede inferir su formato ni la duracion desde la interfaz `LoginResponse`.
+
+Fuentes: [advertencia de laboratorio](../README.md),
+[persistencia](../src/app/login/login.component.ts#L48),
+[construccion del error](../src/app/login/login.component.ts#L57),
+[binding HTML](../src/app/login/login.component.html#L39),
+[HALLAZGOS.md](../HALLAZGOS.md).
+
+## Tareas — `GET http://localhost:8000/api/tasks`
+
+### 1. Quien lo llama
+
+`DashboardComponent.ngOnInit()` lee `workshop_token` y parsea `workshop_user`
+desde `localStorage`. Con token truthy llama
+`TasksService.getTasks(this.user.username || '', token)`. Este servicio usa
+`HttpClient.get<Task[]>` y `firstValueFrom`; no utiliza Axios.
+
+Si no hay token, navega a `/login` y no hace la peticion. El parseo del usuario
+ocurre **antes** de esa comprobacion y fuera del `try` de HTTP, por lo que una
+sesion corrupta puede impedir incluso esa redireccion. Mientras espera el
+resultado, la UI muestra los bloques de carga (`loading` comienza en `true`).
+
+Fuentes: [inicializacion](../src/app/dashboard/dashboard.component.ts#L36),
+[servicio](../src/app/services/tasks.service.ts#L11),
+[carga y error en template](../src/app/dashboard/dashboard.component.html#L12).
+
+### 2. Que envia
+
+| Ubicacion | Nombre | Tipo / valor | Procedencia y comportamiento |
+|---|---|---|---|
+| URL | `/api/tasks` | Ruta fija | Base `http://localhost:8000` de `environment.tasksApiUrl`. |
+| Query param | `owner` | `string` esperado | `user.username` guardado al hacer login; usa `""` si es falsy. Se concatena directamente a `?owner=` sin codificacion explicita ni `HttpParams`. |
+| Header explicito | `Authorization` | `Bearer <token>` | Token guardado como `workshop_token`; no se modifica ni verifica su expiracion. |
+| Header automatico | `Accept` | `application/json, text/plain, */*` | Lo agrega Angular si falta. |
+| Header | `Content-Type` | No se establece para este GET sin body | No hay cuerpo que serializar ni valor explicito en el servicio. |
+| Body | Ninguno | No aplica | Solo query y header de autorizacion. |
+| Opcion del cliente | `timeout` | No configurado | No existe un limite de tiempo de aplicacion para esta llamada. |
+
+No se activa `withCredentials`. Los headers adicionales administrados por el
+navegador no estan especificados por el servicio.
+
+Ejemplo con los argumentos de
+[TasksService.spec](../src/app/services/tasks.service.spec.ts#L13)
+(`test-token` es el token ficticio de esa prueba):
+
+```http
+GET http://localhost:8000/api/tasks?owner=student
+Accept: application/json, text/plain, */*
+Authorization: Bearer test-token
+```
+
+Fuentes: [query y header](../src/app/services/tasks.service.ts#L11),
+[propietario desde sesion](../src/app/dashboard/dashboard.component.ts#L44),
+[URL base](../src/environments/environment.ts#L3).
+Headers y serializacion automaticos:
+[transporte Angular instalado](../node_modules/@angular/common/fesm2022/_module-chunk.mjs#L1075).
+
+### 3. Que espera recibir en exito
+
+**Codigo de estado:** el servicio no comprueba uno concreto; Angular considera
+exito HTTP el rango `2xx` y entrega solo el body JSON. **Pregunta abierta:** cual
+es el codigo real de exito de la API de tareas. La prueba del servicio simula un
+arreglo, no un status HTTP. Una respuesta `204` sin body no satisface lo que el
+dashboard necesita, aunque sea un exito HTTP.
+
+La raiz del JSON esperado es un **arreglo directo de tareas**, no
+`{ "data": [...] }` ni otro wrapper.
+
+| Campo de cada elemento | Tipo en `Task` | Uso en la UI |
+|---|---|---|
+| `title` | `string` | Titulo de la tarjeta, mediante interpolacion. |
+| `description` | `string` | Descripcion de la tarjeta, mediante interpolacion. |
+| `status` | `string` | Excluye solo el valor exacto `ARCHIVED`; determina el texto y clase visual del estado. |
+| `priority` | `string` | Forma parte de la etiqueta y del comparador de orden. |
+| `owner` | `string` | Se muestra en mayusculas en la etiqueta; no se vuelve a filtrar por propietario en el cliente. |
+| `label` | `string` opcional | No es requerido del servidor: el dashboard lo calcula y sobrescribe en cada tarea visible con `formatTaskLabel`. |
+
+Ejemplo exacto del body simulado en
+[la prueba del servicio](../src/app/services/tasks.service.spec.ts#L9):
+
+```json
+[
+  {
+    "title": "Requirement",
+    "status": "TODO",
+    "priority": "HIGH",
+    "owner": "student",
+    "description": ""
+  }
+]
+```
+
+Con ese ejemplo, guarda el arreglo completo en `tasks` y muestra una tarjeta
+con etiqueta **HIGH · STUDENT**, titulo **Requirement**, descripcion vacia y
+estado **Por hacer**. Al finalizar pone `loading = false`.
+
+Reglas actuales de presentacion:
+
+- Excluye de `visibleTasks` solo `status === 'ARCHIVED'`, sensible a mayusculas.
+- Para cada tarea visible calcula `label` como prioridad y propietario en
+  mayusculas, separados por ` · `. Usa `NORMAL` y `SIN-ASIGNAR` para valores
+  falsy. Modifica los objetos originales del arreglo.
+- Ordena con `a.priority > b.priority ? -1 : 1`, usando la comparacion directa
+  de los valores, sin ranking de negocio ni tratamiento especial de empates.
+  Para strings es orden lexicografico descendente: la
+  [prueba del dashboard](../src/app/dashboard/dashboard.component.spec.ts#L58)
+  deja `NORMAL` antes de `HIGH`.
+- Muestra `TODO` como **Por hacer**, `IN_PROGRESS` como **En progreso**,
+  `DONE` y `COMPLETED` como **Completado**, y `RESUELTO` como **Resuelto**.
+  Convierte a mayusculas para buscar la traduccion; para estados no reconocidos
+  muestra el valor recibido.
+- Con arreglo vacio, o sin tareas visibles tras filtrar, muestra
+  **No hay tareas para mostrar todavía.**
+
+Fuentes: [interfaz Task](../src/app/models/task.model.ts#L1),
+[transformacion y asignacion](../src/app/dashboard/dashboard.component.ts#L44),
+[estados](../src/app/dashboard/dashboard.component.ts#L8),
+[formateador](../src/app/utils/legacy-format.ts#L1),
+[tarjetas y lista vacia](../src/app/dashboard/dashboard.component.html#L20).
+
+### 4. Como reacciona ante errores
+
+En el `catch` de inicializacion, el dashboard guarda en `error` el mensaje
+extraido y pone `loading = false`. El template muestra el error por
+interpolacion y oculta la seccion de tarjetas mientras `error` sea truthy.
+No hay reintentos automaticos ni un boton para reintentar la consulta.
+
+El extractor prioriza un `HttpErrorResponse.error.detail` string no vacio;
+luego usa el mensaje tecnico del error HTTP. Para un `Error` ordinario usa su
+mensaje no vacio; para otros casos usa **No se pudo cargar el dashboard**.
+
+| Caso | Reaccion de la UI y sesion |
+|---|---|
+| No hay token guardado | No consulta tareas; navega a `/login`, salvo que falle antes el parseo de `workshop_user`. |
+| Token invalido/expirado rechazado con `401` o `403` | Muestra el error segun la regla comun y termina la carga; permanece en dashboard. No borra token/usuario ni redirige a login automaticamente. |
+| Otros errores HTTP (`4xx`/`5xx`) | Misma reaccion; no hay ramas especificas por status. El boton **Cerrar sesión** permanece disponible. |
+| Timeout | No se configura timeout de aplicacion: si no hay respuesta ni error de transporte, la carga puede continuar indefinidamente. Si el navegador finalmente reporta error, se aplica el manejo comun. |
+| Red, CORS, conexion o cancelacion reportada por el transporte | Muestra el mensaje tecnico disponible (habitualmente un `HttpErrorResponse` con status `0`), termina la carga y oculta tarjetas. La UI no diferencia la causa. |
+| HTTP exitoso con JSON invalido | El parseo JSON de Angular falla; el `catch` muestra el mensaje tecnico y finaliza la carga. |
+| `null` como body, por ejemplo una respuesta sin contenido | El acceso a `tasks.length` produce un error dentro del `try`; se muestra su mensaje y finaliza la carga. |
+| Objeto sin `length` en lugar de arreglo, por ejemplo `{ "data": [] }` | No hay validacion de arreglo. El bucle no itera si `length` es `undefined`, guarda el objeto en `tasks` y termina mostrando lista vacia, sin advertencia de contrato. Otros formatos pueden comportarse distinto. |
+| Elementos nulos o formato que falla durante el bucle o el ordenamiento | Si lanza dentro del `try`, muestra el mensaje del error y termina la carga. No garantiza un mensaje amigable de respuesta inesperada. |
+| Campos ausentes o tipos incompatibles que no fallan al procesar | Pueden producir texto vacio, valores por defecto o fallos de renderizado. Un error posterior del template, por ejemplo al aplicar `toUpperCase()`/`toLowerCase()` a un estado no string, no esta cubierto por el `catch` HTTP. |
+| JSON invalido de `workshop_user` o fallo al leer almacenamiento | Sucede antes del `try` HTTP. No se asigna el error de dashboard ni se finaliza `loading` mediante ese `catch`; la inicializacion falla sin recuperacion de UI definida. |
+| `workshop_user` contiene el JSON valido `null` y hay token | Acceder a `this.user.username` falla dentro del `try`, antes de solicitar tareas: se guarda el mensaje del error y se pone `loading = false`. El saludo del template tambien intenta acceder al usuario y no tiene una guarda para `null`; no se garantiza una recuperacion visual correcta. |
+
+Ejemplo de body de error de la
+[prueba que simula `503`](../src/app/dashboard/dashboard.component.spec.ts#L86):
+
+```json
+{
+  "detail": "Servicio no disponible"
+}
+```
+
+La UI muestra **Servicio no disponible** y deja de mostrar los bloques de
+carga. Ese `503` es un fixture de prueba, no evidencia del servidor real.
+**Preguntas abiertas:** que estados devuelve la API para token invalido,
+permisos insuficientes o indisponibilidad; si sus errores siempre incluyen
+`detail`; y cual es el esquema efectivo de tareas. No se deducen esas garantias
+a partir de la interfaz TypeScript.
+
+Fuentes: [lectura de sesion fuera del try](../src/app/dashboard/dashboard.component.ts#L36),
+[procesamiento y catch](../src/app/dashboard/dashboard.component.ts#L43),
+[extractor](../src/app/utils/http-error-message.ts#L5),
+[renderizado](../src/app/dashboard/dashboard.component.html#L18).
+
+### 5. Notas de seguridad relevantes
+
+- El token se lee desde `localStorage` y se envia por HTTP al puerto local 8000.
+  No hay servicio central de sesion ni validacion local de firma/expiracion.
+  JavaScript del mismo origen puede acceder al almacenamiento.
+- El query `owner` proviene del usuario guardado, que puede alterarse en el
+  navegador. La UI no verifica que el servidor autorice ese filtro.
+  **Pregunta abierta:** como valida el backend que el Bearer pueda consultar
+  las tareas de ese propietario.
+- La URL se construye por concatenacion: caracteres especiales en el usuario
+  pueden modificar el query. No documentar codificacion que no existe.
+- El dashboard usa interpolacion para error, titulo, descripcion y etiqueta,
+  no `[innerHTML]`; no debe confundirse con el mensaje HTML del login.
+- **Cerrar sesión** solo elimina `workshop_token` y `workshop_user` de
+  `localStorage` y navega a `/login`; conserva `workshop_preferences`.
+  No consume un endpoint de logout, revocacion o refresh y no invalida el token
+  en el servidor. **Pregunta abierta:** politica real de expiracion/revocacion.
+- Las rutas no declaran guards; la comprobacion de token esta en `ngOnInit`.
+  Esta comprobacion del cliente no reemplaza la autorizacion de la API.
+
+Fuentes: [lectura del token](../src/app/dashboard/dashboard.component.ts#L37),
+[Bearer y query](../src/app/services/tasks.service.ts#L11),
+[interpolacion](../src/app/dashboard/dashboard.component.html#L18),
+[logout](../src/app/dashboard/dashboard.component.ts#L62),
+[rutas](../src/app/app.routes.ts#L3).
+
+## Documentos y fuentes consultados
+
+Documentos del repositorio:
+
+- [README.md](../README.md): ejecucion, servicios y credenciales del laboratorio.
+- [REGLAS.md](../REGLAS.md): contratos y limites del refactor.
+- [GOOD_PRACTICES.md](GOOD_PRACTICES.md): convenciones objetivo, no garantia de
+  que todas esten implementadas.
+- [HALLAZGOS.md](../HALLAZGOS.md): estado de seguimiento y riesgos aun presentes.
+- Version anterior de este documento, contrastada con el codigo actual.
+
+Codigo y pruebas usados como evidencia:
+
+- [AuthService](../src/app/services/auth.service.ts),
+  [TasksService](../src/app/services/tasks.service.ts),
+  [modelos de autenticacion](../src/app/models/auth.models.ts),
+  [modelo de tarea](../src/app/models/task.model.ts) y
+  [environment](../src/environments/environment.ts).
+- [LoginComponent](../src/app/login/login.component.ts) y
+  [su template](../src/app/login/login.component.html);
+  [DashboardComponent](../src/app/dashboard/dashboard.component.ts) y
+  [su template](../src/app/dashboard/dashboard.component.html).
+- [Extractor de errores](../src/app/utils/http-error-message.ts),
+  [formateador](../src/app/utils/legacy-format.ts),
+  [arranque](../src/main.ts) y [rutas](../src/app/app.routes.ts).
+- Pruebas de [autenticacion HTTP](../src/app/services/auth.service.spec.ts),
+  [tareas HTTP](../src/app/services/tasks.service.spec.ts),
+  [login](../src/app/login/login.component.spec.ts),
+  [dashboard](../src/app/dashboard/dashboard.component.spec.ts) y
+  [errores](../src/app/utils/http-error-message.spec.ts). Sus dobles no prueban
+  una respuesta real del backend ni su politica CORS.
+- [Implementacion HTTP de Angular instalada](../node_modules/@angular/common/fesm2022/_module-chunk.mjs):
+  consultada dentro de este repositorio para verificar headers automaticos,
+  rango de exito, parseo JSON y timeout. Sus numeros de linea pueden cambiar
+  al reinstalar o actualizar Angular.

@@ -1,0 +1,15 @@
+{
+  "changedEntries": [
+    "",
+    "node_modules/lodash"
+  ],
+  "installed": "4.18.1",
+  "remainingAudit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 9,
+    "high": 10,
+    "critical": 6,
+    "total": 25
+  }
+}

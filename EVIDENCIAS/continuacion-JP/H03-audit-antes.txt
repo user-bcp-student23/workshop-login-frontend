@@ -1,0 +1,170 @@
+
+> workshop-login-frontend@0.1.0 audit:workshop
+> npm audit --audit-level=moderate
+
+# npm audit report
+
+@angular/common  21.0.0-next.0 - 21.2.19
+Severity: moderate
+Depends on vulnerable versions of @angular/core
+Angular: Information Leak via `HttpTransferCache` Bypass When Using `withRequestsMadeViaParent` - https://github.com/advisories/GHSA-p297-fm68-3q8c
+fix available via `npm audit fix --force`
+Will install @angular/forms@21.2.25, which is outside the stated dependency range
+node_modules/@angular/common
+  @angular/forms  4.4.0-RC.0 - 4.4.0 || 21.0.0-next.0 - 21.2.19
+  Depends on vulnerable versions of @angular/common
+  Depends on vulnerable versions of @angular/core
+  Depends on vulnerable versions of @angular/platform-browser
+  node_modules/@angular/forms
+  @angular/platform-browser  21.0.0-next.0 - 21.2.19
+  Depends on vulnerable versions of @angular/common
+  Depends on vulnerable versions of @angular/core
+  node_modules/@angular/platform-browser
+    @angular/router  10.0.0-next.0 - 10.0.0-rc.1 || 21.0.0-next.0 - 21.2.23
+    Depends on vulnerable versions of @angular/common
+    Depends on vulnerable versions of @angular/core
+    Depends on vulnerable versions of @angular/platform-browser
+    node_modules/@angular/router
+
+@angular/compiler  21.0.0 - 21.2.19
+Severity: moderate
+Angular: Sanitization bypass via directive host bindings on concrete host elements in @angular/core and @angular/compiler - https://github.com/advisories/GHSA-hh8m-fm6v-7cvg
+fix available via `npm audit fix --force`
+Will install @angular/compiler-cli@21.2.25, which is outside the stated dependency range
+node_modules/@angular/compiler
+  @angular/compiler-cli  21.0.0-next.0 - 21.2.19
+  Depends on vulnerable versions of @angular/compiler
+  node_modules/@angular/compiler-cli
+  @angular/core  21.0.0-next.0 - 21.2.19
+  Depends on vulnerable versions of @angular/compiler
+  node_modules/@angular/core
+
+
+
+@modelcontextprotocol/sdk  1.12.0 - 1.30.1
+Severity: high
+MCP TypeScript SDK: OAuth client could send credentials to an authorization server chosen by the MCP server - https://github.com/advisories/GHSA-6qxp-vccf-f47h
+fix available via `npm audit fix --force`
+Will install @angular/cli@21.2.27, which is outside the stated dependency range
+node_modules/@modelcontextprotocol/sdk
+  @angular/cli  20.1.0-next.0 - 20.3.38 || 21.0.0-next.0 - 21.2.25 || 22.0.0-next.0 - 22.2.0-rc.0
+  Depends on vulnerable versions of @modelcontextprotocol/sdk
+  node_modules/@angular/cli
+
+@vitest/mocker  2.1.0 - 4.1.10
+Severity: moderate
+Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock - https://github.com/advisories/GHSA-82fw-gwwq-j7x9
+fix available via `npm audit fix --force`
+Will install @vitest/coverage-v8@3.2.7, which is outside the stated dependency range
+node_modules/@vitest/mocker
+  vitest  <=4.1.10
+  Depends on vulnerable versions of @vitest/mocker
+  Depends on vulnerable versions of tinypool
+  node_modules/vitest
+    @vitest/coverage-v8  <=3.2.5
+    Depends on vulnerable versions of vitest
+    node_modules/@vitest/coverage-v8
+
+braces  *
+Severity: high
+braces vulnerable to stack-exhaustion denial of service through deeply nested patterns - https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+fix available via `npm audit fix --force`
+Will install @angular-devkit/build-angular@21.2.27, which is outside the stated dependency range
+node_modules/braces
+  chokidar  2.0.0 - 3.6.0
+  Depends on vulnerable versions of braces
+  node_modules/webpack-dev-server/node_modules/chokidar
+    webpack-dev-server  *
+    Depends on vulnerable versions of chokidar
+    Depends on vulnerable versions of http-proxy-middleware
+    Depends on vulnerable versions of sockjs
+    node_modules/webpack-dev-server
+      @angular-devkit/build-angular  *
+      Depends on vulnerable versions of @angular/build
+      Depends on vulnerable versions of http-proxy-middleware
+      Depends on vulnerable versions of piscina
+      Depends on vulnerable versions of postcss
+      Depends on vulnerable versions of webpack-dev-server
+      node_modules/@angular-devkit/build-angular
+  micromatch  >=0.2.0
+  Depends on vulnerable versions of braces
+  node_modules/micromatch
+    http-proxy-middleware  >=0.3.0
+    Depends on vulnerable versions of micromatch
+    node_modules/http-proxy-middleware
+    node_modules/webpack-dev-server/node_modules/http-proxy-middleware
+
+lodash  <=4.17.23
+Severity: high
+lodash vulnerable to Code Injection via `_.template` imports key names - https://github.com/advisories/GHSA-r5fr-rjxr-66jc
+lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit` - https://github.com/advisories/GHSA-f23m-r3pf-42rh
+Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions - https://github.com/advisories/GHSA-xxjr-mmjv-4gpg
+fix available via `npm audit fix --force`
+Will install lodash@4.18.1, which is outside the stated dependency range
+node_modules/lodash
+
+piscina  5.0.0 - 5.3.1
+Severity: critical
+piscina: Prototype-pollution gadget in ThreadPool.options allows RCE via execArgv / loadBalancer / env - https://github.com/advisories/GHSA-67c8-pqhq-4rmx
+fix available via `npm audit fix --force`
+Will install @angular-devkit/build-angular@21.2.27, which is outside the stated dependency range
+node_modules/piscina
+  @angular/build  20.0.0-next.0 - 20.3.37 || 21.0.0-next.0 - 21.2.24 || 22.0.0-next.0 - 22.2.0-rc.0
+  Depends on vulnerable versions of piscina
+  Depends on vulnerable versions of undici
+  node_modules/@angular-devkit/build-angular/node_modules/@angular/build
+
+postcss  <=8.5.22
+Severity: high
+PostCSS: incomplete fix of GHSA-6g55-p6wh-862q — attacker-controlled sourceMappingURL reads arbitrary .map files when `from` is unset - https://github.com/advisories/GHSA-fxqj-rqcc-2cmp
+PostCSS: Path Traversal in Previous Source Map Auto-Loading (sourceMappingURL) leads to Arbitrary .map File Disclosure - https://github.com/advisories/GHSA-r28c-9q8g-f849
+fix available via `npm audit fix --force`
+Will install @angular-devkit/build-angular@21.2.27, which is outside the stated dependency range
+node_modules/postcss
+
+tinypool  <=2.1.1
+Severity: critical
+Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution - https://github.com/advisories/GHSA-5gmw-xhrv-c9v3
+Tinypool: Prototype Pollution Gadget to RCE in run() options - https://github.com/advisories/GHSA-85c8-ppgw-ccpr
+fix available via `npm audit fix --force`
+Will install @vitest/coverage-v8@3.2.7, which is outside the stated dependency range
+node_modules/tinypool
+
+undici  7.0.0 - 7.29.0
+Severity: high
+undici vulnerable to downstream response desynchronization via retry interceptor - https://github.com/advisories/GHSA-8xcm-r25x-g524
+undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives - https://github.com/advisories/GHSA-4cwx-7wf7-3272
+undici vulnerable to CRLF Injection via blob-like body 'type' property - https://github.com/advisories/GHSA-m8rv-5g2x-5cg5
+undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives - https://github.com/advisories/GHSA-jr45-8vmc-qm54
+undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields - https://github.com/advisories/GHSA-v3r7-h72x-cjcm
+undici vulnerable to Denial of Service via unhandled error in WebSocket permessage-deflate decompression - https://github.com/advisories/GHSA-3wwx-pv8p-q78v
+undici vulnerable to Denial of Service via orphaned RetryHandler response body - https://github.com/advisories/GHSA-pmjh-fq2x-6v4x
+undici vulnerable to downstream response splitting via retry interceptor - https://github.com/advisories/GHSA-r53p-7pc4-xj5r
+undici vulnerable to Denial of Service via unrequested WebSocket subprotocol - https://github.com/advisories/GHSA-rfgv-xxqx-mfg5
+undici vulnerable to Denial of Service via unbounded decompression of compressed responses - https://github.com/advisories/GHSA-3xpg-4rpp-hhhm
+undici vulnerable to cross-user cookie disclosure via Set-Cookie caching in shared caches - https://github.com/advisories/GHSA-2jfj-6hjv-fm6j
+undici vulnerable to response truncation via oversized chunked responses in the dump interceptor - https://github.com/advisories/GHSA-2gqq-gqf2-x968
+undici vulnerable to TLS certificate validation bypass via dropped connect options in BalancedPool - https://github.com/advisories/GHSA-w293-vg96-wgc3
+undici vulnerable to caching and replay of unsafe HTTP method responses - https://github.com/advisories/GHSA-8436-99hf-9mmv
+undici vulnerable to Denial of Service via WebSocketStream unclean close - https://github.com/advisories/GHSA-rx4f-c7p8-82vq
+fix available via `npm audit fix --force`
+Will install @angular-devkit/build-angular@21.2.27, which is outside the stated dependency range
+node_modules/@angular-devkit/build-angular/node_modules/undici
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install @angular-devkit/build-angular@21.2.27, which is outside the stated dependency range
+node_modules/uuid
+  sockjs  >=0.3.17
+  Depends on vulnerable versions of uuid
+  node_modules/sockjs
+
+
+
+26 vulnerabilities (9 moderate, 11 high, 6 critical)
+
+To address all issues, run:
+  npm audit fix --force
+Exit code: 1

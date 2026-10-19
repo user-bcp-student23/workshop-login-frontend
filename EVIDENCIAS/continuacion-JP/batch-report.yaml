@@ -1,0 +1,62 @@
+scope: workshop-login-frontend
+date: "2026-10-19"
+approval:
+  original_items: [H-01, H-03]
+  scope_extension_by: JP
+  authorized_blockers: [BUG-01, BUG-02, BUG-04, BUG-05]
+sequence:
+  - "H-01 implemented earlier, initially blocked."
+  - "JP authorized the four blockers; tests written before fixes."
+  - "Full suite 107/107 and browser passed; H-01 row updated."
+  - "H-03 characterization 10/10 before dependency update."
+  - "Only Lodash upgraded to 4.18.1; characterization 10/10 after."
+  - "Additional login visual error check exposed same BUG-05 boundary."
+  - "Wrote red test, completed login notification, revalidated both items."
+items:
+  - id: H-01
+    status: Resuelto
+    diff: H-01.diff
+    characterization_before: {passed: 4, failed: 0, exit_code: 0}
+    characterization_after: {passed: 4, failed: 0, exit_code: 0}
+    session_service_tests: {passed: 16, failed: 0}
+    initial_baseline: {passed: 93, failed: 3, skipped: 0, exit_code: 1}
+    expanded_regressions_before: {passed: 61, failed: 15, exit_code: 1}
+    full_suite_before_H03: {passed: 107, failed: 0, skipped: 0, exit_code: 0}
+    browser: PASS
+  - id: H-03
+    status: Resuelto
+    diff: H-03.diff
+    dependency: "lodash 4.17.21 -> 4.18.1"
+    characterization_before: {passed: 10, failed: 0, exit_code: 0}
+    characterization_after: {passed: 10, failed: 0, exit_code: 0}
+    cve_scan: "[] for lodash@4.18.1"
+    no_other_lock_versions_changed: true
+    reproducible_install: {command: "npm ci --ignore-scripts", exit_code: 0}
+final:
+  suite: {passed: 118, failed: 0, skipped: 0, files: 11, exit_code: 0}
+  build: {exit_code: 0, warning: "lodash/merge CommonJS"}
+  coverage:
+    source_lines: 91.69
+    source_statements: 91.69
+    source_branches: 94
+    source_functions: 95.45
+    modified_components_and_session_service_lines: 100
+    minimum: 85
+    thresholds_lowered: false
+  browser:
+    tool: integrated-Playwright
+    exit_code: null
+    full_flow: PASS
+    login_rejection_visible: PASS
+    unexpected_tasks_body_visible: PASS
+    invalid_status_visible: PASS
+    fixtures_not_real_backends: true
+    server_stopped: true
+  audit:
+    command: "npm run audit:workshop"
+    exit_code: 1
+    lodash_findings: 0
+    remaining: {moderate: 9, high: 10, critical: 6, total: 25}
+    scope: "Remaining dependencies not authorized for this plan"
+functional_overall: PASS
+security_overall: "FAIL - residual dependency findings; no blanket approval"
