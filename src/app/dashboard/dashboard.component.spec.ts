@@ -1,0 +1,253 @@
+import '@angular/compiler';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectorRef } from '@angular/core';
+import { Router } from '@angular/router';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TasksService } from '../services/tasks.service';
+import { SessionService } from '../services/session.service';
+import { DashboardComponent } from './dashboard.component';
+
+class MemoryStorage {
+  private readonly values = new Map<string, string>();
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  setItem(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
+
+  clear(): void {
+    this.values.clear();
+  }
+}
+
+describe('DashboardComponent characterization', () => {
+  let storage: MemoryStorage;
+  let persistent: MemoryStorage;
+  let navigate: ReturnType<typeof vi.fn>;
+  let getTasks: ReturnType<typeof vi.fn>;
+  let component: DashboardComponent;
+  let markForCheck: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    storage = new MemoryStorage();
+    persistent = new MemoryStorage();
+    vi.stubGlobal('localStorage', persistent);
+    vi.stubGlobal('sessionStorage', storage);
+    navigate = vi.fn().mockResolvedValue(true);
+    getTasks = vi.fn();
+    markForCheck = vi.fn();
+    component = new DashboardComponent(
+      { navigate } as unknown as Router,
+      { getTasks } as unknown as TasksService,
+      new SessionService(),
+      { markForCheck } as unknown as ChangeDetectorRef
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('redirects to login without requesting tasks when there is no token', async () => {
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+
+    await component.ngOnInit();
+
+    expect(navigate).toHaveBeenCalledWith(['/login']);
+    expect(getTasks).not.toHaveBeenCalled();
+  });
+
+  it('requests tasks with the saved owner and bearer token and processes the array', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+    const tasks = [
+      { title: 'Normal task', status: 'TODO', priority: 'NORMAL', owner: 'student' },
+      { title: 'Urgent task', status: 'IN_PROGRESS', priority: 'HIGH', owner: 'student' },
+      { title: 'Archived task', status: 'ARCHIVED', priority: 'LOW', owner: 'student' }
+    ];
+    getTasks.mockResolvedValue(tasks);
+
+    await component.ngOnInit();
+
+    expect(getTasks).toHaveBeenCalledWith('student', 'test-token');
+    expect(component.tasks).toEqual(tasks);
+    expect(component.visibleTasks.map(task => task.title)).toEqual(['Normal task', 'Urgent task']);
+    expect(component.visibleTasks[0].label).toBe('NORMAL · STUDENT');
+    expect(component.loading).toBe(false);
+    expect(markForCheck).toHaveBeenCalled();
+  });
+
+  it('displays the backend task error and ends loading', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+    getTasks.mockRejectedValue(new HttpErrorResponse({
+      error: { detail: 'Servicio no disponible' },
+      status: 503,
+      statusText: 'Service Unavailable'
+    }));
+
+    await component.ngOnInit();
+
+    expect(component.error).toBe('Servicio no disponible');
+    expect(component.loading).toBe(false);
+  });
+
+  it('falls back to the request message and generic dashboard error', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+    getTasks.mockRejectedValueOnce(new Error('Request failed'));
+    await component.ngOnInit();
+    expect(component.error).toBe('Request failed');
+
+    component.loading = true;
+    getTasks.mockRejectedValueOnce({});
+    await component.ngOnInit();
+    expect(component.error).toBe('No se pudo cargar el dashboard');
+    expect(component.loading).toBe(false);
+  });
+
+  it('removes the saved token and user on logout and navigates to login', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+    persistent.setItem('workshop_preferences', JSON.stringify({ theme: 'dark' }));
+
+    await component.logout();
+
+    expect(storage.getItem('workshop_token')).toBeNull();
+    expect(storage.getItem('workshop_user')).toBeNull();
+    expect(persistent.getItem('workshop_preferences')).toBe(JSON.stringify({ theme: 'dark' }));
+    expect(navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it.each([401, 403, 400, 500, 503])('handles task HTTP %i and preserves the session', async status => {
+    storage.setItem('workshop_token', 'invalid-or-expired-token');
+    storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+    getTasks.mockRejectedValue(new HttpErrorResponse({ status, error: { detail: 'Access rejected' } }));
+    await component.ngOnInit();
+    expect(component.error).toBe('Access rejected');
+    expect(component.loading).toBe(false);
+    expect(component.visibleTasks).toEqual([]);
+    expect(storage.getItem('workshop_token')).toBe('invalid-or-expired-token');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it.each(['network', 'cors', 'abort', 'timeout'])('handles task transport error: %s', async cause => {
+    storage.setItem('workshop_token', 'test-token');
+    const error = new HttpErrorResponse({ status: 0, error: new Error(cause) });
+    getTasks.mockRejectedValue(error);
+    await component.ngOnInit();
+    expect(component.error).toBe(error.message);
+    expect(component.loading).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('handles invalid JSON delivered as an Angular parse error', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    const error = new HttpErrorResponse({
+      status: 200,
+      error: { error: new SyntaxError('Invalid JSON'), text: '{' }
+    });
+    getTasks.mockRejectedValue(error);
+    await component.ngOnInit();
+    expect(component.error).toBe(error.message);
+    expect(component.loading).toBe(false);
+  });
+
+  it.each([{ body: null }, { body: [null] }])('reports a processing failure for body $body', async ({ body }) => {
+    storage.setItem('workshop_token', 'test-token');
+    getTasks.mockResolvedValue(body);
+    await component.ngOnInit();
+    expect(component.error).not.toBe('');
+    expect(component.loading).toBe(false);
+    expect(component.visibleTasks).toEqual([]);
+  });
+
+  it.each([{ tasks: [] }, { tasks: [{ status: 'ARCHIVED' }] }])('accepts empty or fully archived results: $tasks', async ({ tasks }) => {
+    storage.setItem('workshop_token', 'test-token');
+    getTasks.mockResolvedValue(tasks);
+    await component.ngOnInit();
+    expect(component.visibleTasks).toEqual([]);
+    expect(component.error).toBe('');
+    expect(component.loading).toBe(false);
+    expect(getTasks).toHaveBeenCalledWith('', 'test-token');
+  });
+
+  it.each([
+    ['TODO', 'Por hacer'],
+    ['in_progress', 'En progreso'],
+    ['DONE', 'Completado'],
+    ['COMPLETED', 'Completado'],
+    ['RESUELTO', 'Resuelto'],
+    ['OTHER', 'OTHER'],
+    ['', '']
+  ])('translates state %s to %s', (status, expected) => {
+    expect(component.statusLabel(status)).toBe(expected);
+  });
+
+  it('BUG-02: reports an unexpected tasks wrapper instead of a successful empty list', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    getTasks.mockResolvedValue({ data: [] });
+    await component.ngOnInit();
+    expect(component.error).not.toBe('');
+    expect(component.loading).toBe(false);
+  });
+
+  it.each(['{', 'null'])('BUG-03: recovers from invalid saved user %s', async savedUser => {
+    storage.setItem('workshop_token', 'test-token');
+    storage.setItem('workshop_user', savedUser);
+    await expect(component.ngOnInit()).resolves.toBeUndefined();
+    expect(component.loading).toBe(false);
+    expect(getTasks).not.toHaveBeenCalled();
+    expect(component.user).not.toBeNull();
+  });
+
+  it('BUG-03: handles storage read failure without an unhandled initialization rejection', async () => {
+    vi.spyOn(storage, 'getItem').mockImplementation(() => { throw new Error('Storage unavailable'); });
+    await expect(component.ngOnInit()).resolves.toBeUndefined();
+    expect(component.loading).toBe(false);
+    expect(getTasks).not.toHaveBeenCalled();
+    expect(component.error).toBe('Storage unavailable');
+  });
+
+  it('H-01: reports logout storage removal failure without navigating', async () => {
+    vi.spyOn(storage, 'removeItem').mockImplementation(() => { throw new Error('Removal unavailable'); });
+    await expect(component.logout()).resolves.toBeUndefined();
+    expect(component.error).toBe('Removal unavailable');
+    expect(component.loading).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('H-01: reports logout navigation rejection', async () => {
+    navigate.mockRejectedValue(new Error('Navigation failed'));
+    await expect(component.logout()).resolves.toBeUndefined();
+    expect(component.error).toBe('Navigation failed');
+    expect(component.loading).toBe(false);
+  });
+
+  it.each([42, null, undefined, {}, []])('BUG-04: rejects invalid status %j before rendering', async status => {
+    storage.setItem('workshop_token', 'test-token');
+    getTasks.mockResolvedValue([{ status, priority: 'HIGH', owner: 'student' }]);
+    await component.ngOnInit();
+    expect(component.error).toContain('estado');
+    expect(component.visibleTasks).toEqual([]);
+    expect(component.loading).toBe(false);
+  });
+
+  it('BUG-05: notifies the view after asynchronous success and failure', async () => {
+    storage.setItem('workshop_token', 'test-token');
+    getTasks.mockResolvedValue([]);
+    await component.ngOnInit();
+    expect(markForCheck).toHaveBeenCalledTimes(1);
+    getTasks.mockRejectedValue(new Error('Unavailable'));
+    await component.ngOnInit();
+    expect(markForCheck).toHaveBeenCalledTimes(2);
+  });
+});

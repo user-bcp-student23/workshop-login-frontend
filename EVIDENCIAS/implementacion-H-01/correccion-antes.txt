@@ -1,0 +1,32 @@
+
+> workshop-login-frontend@0.1.0 test
+> vitest run src/app/services/session.service.spec.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/services/session.service.spec.ts [ src/app/services/session.service.spec.ts ]
+Error: Cannot find module './session.service' imported from 'C:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend/src/app/services/session.service.spec.ts'
+ ❯ src/app/services/session.service.spec.ts:3:1
+      1| import '@angular/compiler';
+      2| import { afterEach, beforeEach, describe, expect, it, vi } from 'vites…
+      3| import { SessionService } from './session.service';
+       | ^
+      4| 
+      5| function memoryStorage() {
+
+Caused by: Error: Failed to load url ./session.service (resolved id: ./session.service) in C:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend/src/app/services/session.service.spec.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22907:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m   Start at [22m 17:17:30
+[2m   Duration [22m 589ms[2m (transform 36ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 91ms)[22m
+
+Exit code: 1

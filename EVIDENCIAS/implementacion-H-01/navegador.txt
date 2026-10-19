@@ -1,0 +1,43 @@
+H-01 - navegador integrado, 19/10/2026
+Directorio: workshop-login-frontend (raiz del repositorio).
+Inicio: npm start -- --port 4317
+Readiness: Invoke-WebRequest http://localhost:4317/login -> HTTP 200.
+Backends: interceptados con fixtures de login y tareas; no backend real.
+Herramienta: runPlaywrightCode; no proceso de test CLI, exit code no aplica.
+
+Pagina compartida original 0f9c2902-5365-499d-9301-263cc3d4be4e:
+- Tras reload, fill de Usuario y Contrasena, click normal no logra estabilidad
+  en 10000 ms. Click force seguido de waitForURL tampoco navega en 10000 ms.
+- bringToFront y click repiten timeout. No se considera prueba de producto PASS.
+- Se quitaron interceptaciones y se limpiaron los dos almacenamientos al final.
+
+Pagina nueva 486127f4-0a3a-452a-9439-d744ae688a24:
+1. Limpiar ambos almacenamientos; sembrar legacy token/usuario y preferencias
+   {"theme":"dark"} en localStorage; recargar login.
+2. Interceptar POST http://localhost:8080/auth/login -> 200,
+   {"token":"test-token","user":{"username":"student","displayName":"Student"}}.
+3. Interceptar GET http://localhost:8000/api/tasks?owner=student -> 200,
+   [{"title":"Requirement","description":"Browser fixture","status":"TODO",
+     "priority":"HIGH","owner":"student"}].
+   El handler verifica Authorization === "Bearer test-token".
+4. Rellenar student / Workshop123! y click Ingresar. Navega a /dashboard.
+5. Asercion:
+   page.getByRole('heading',{name:'Requirement',exact:true})
+       .waitFor({state:'visible',timeout:7000})
+   RESULTADO: FAIL, locator.waitFor: Timeout 7000ms exceeded.
+   Snapshot: heading "Hola, Student", boton "Cerrar sesion", main sin tarjeta.
+   Es la reproduccion del BUG-05 previo; no se aislo la causa raiz.
+6. Comprobacion complementaria con aserciones que lanzan si no se cumplen:
+   - sessionStorage token == test-token y user.username == student.
+   - localStorage token/user == null.
+   - preferencias theme == dark.
+   - page.reload(); heading Hola, Student visible; misma sesion y preferencias.
+   - click Cerrar sesion; waitForURL **/login.
+   - token/user ausentes en ambos almacenamientos; preferencias dark intactas.
+   RESULTADO: PASS de estas aserciones de sesion, recarga y logout.
+   No sustituye ni corrige la asercion de tarea visible fallida del paso 5.
+7. Limpieza de ambos almacenamientos e interceptaciones completada.
+
+Veredicto de flujo visible completo: FAIL.
+H-01 no se cierra, H-03 no se inicia; se respeta el gate del usuario.
+Servidor temporal detenido al terminar las comprobaciones.

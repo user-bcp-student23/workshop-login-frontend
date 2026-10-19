@@ -1,0 +1,14 @@
+diff --git "a/EVIDENCIAS\\continuacion-JP\\despues-BUG-02.snapshot" "b/src\\app\\dashboard\\dashboard.component.ts"
+index 95ca13f..734341f 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\despues-BUG-02.snapshot"
++++ "b/src\\app\\dashboard\\dashboard.component.ts"
+@@ -52,6 +52,9 @@ export class DashboardComponent implements OnInit {
+       }
+       const tmp: any[] = [];
+       for (let i = 0; i < tasks.length; i++) {
++        if (typeof tasks[i]?.status !== 'string') {
++          throw new Error('La respuesta de tareas contiene un estado no valido.');
++        }
+         if (tasks[i].status !== 'ARCHIVED') {
+           tasks[i].label = formatTaskLabel(tasks[i]);
+           tmp.push(tasks[i]);

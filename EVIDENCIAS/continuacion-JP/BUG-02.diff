@@ -1,0 +1,14 @@
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\dashboard\\dashboard.component.ts.snapshot" "b/src\\app\\dashboard\\dashboard.component.ts"
+index 519cdae..95ca13f 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\dashboard\\dashboard.component.ts.snapshot"
++++ "b/src\\app\\dashboard\\dashboard.component.ts"
+@@ -47,6 +47,9 @@ export class DashboardComponent implements OnInit {
+       }
+       this.user = session.user;
+       const tasks = await this.tasksService.getTasks(this.user.username || '', session.token);
++      if (!Array.isArray(tasks)) {
++        throw new Error('La respuesta de tareas no es un arreglo valido.');
++      }
+       const tmp: any[] = [];
+       for (let i = 0; i < tasks.length; i++) {
+         if (tasks[i].status !== 'ARCHIVED') {

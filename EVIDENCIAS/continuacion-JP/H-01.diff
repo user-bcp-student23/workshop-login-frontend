@@ -1,0 +1,806 @@
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.ts.snapshot" "b/src\\app\\login\\login.component.ts"
+index 9b5811a..f042af5 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.ts.snapshot"
++++ "b/src\\app\\login\\login.component.ts"
+@@ -1,9 +1,10 @@
+ import { CommonModule } from '@angular/common';
+-import { Component } from '@angular/core';
++import { ChangeDetectorRef, Component } from '@angular/core';
+ import { FormsModule } from '@angular/forms';
+ import { Router } from '@angular/router';
+ import merge from 'lodash/merge';
+ import { AuthService } from '../services/auth.service';
++import { SessionService } from '../services/session.service';
+ import { getHttpErrorMessage } from '../utils/http-error-message';
+ 
+ @Component({
+@@ -20,7 +21,18 @@ export class LoginComponent {
+   message: any = '';
+   preferences: any = { theme: 'light', showTips: true, compact: false };
+ 
+-  constructor(private router: Router, private authService: AuthService) {
++  constructor(
++    private router: Router,
++    private authService: AuthService,
++    private session: SessionService,
++    private changeDetector: ChangeDetectorRef
++  ) {
++    try {
++      this.session.initialize();
++    } catch (error: unknown) {
++      this.message = getHttpErrorMessage(error, 'message', 'No se pudo preparar la sesion');
++      console.error(error);
++    }
+     try {
+       const saved = JSON.parse(localStorage.getItem('workshop_preferences') || '{}');
+       this.preferences = merge(this.preferences, saved);
+@@ -45,8 +57,14 @@ export class LoginComponent {
+             client: 'angular-workshop'
+           });
+           if (response && response.token) {
+-            localStorage.setItem('workshop_token', response.token);
+-            localStorage.setItem('workshop_user', JSON.stringify(response.user));
++            const user: unknown = response.user;
++            if (typeof response.token !== 'string'
++              || typeof user !== 'object' || user === null || Array.isArray(user)
++              || !('username' in user) || typeof user.username !== 'string'
++              || ('displayName' in user && typeof user.displayName !== 'string')) {
++              throw new Error('La respuesta de autenticacion no es valida.');
++            }
++            this.session.save(response.token, response.user);
+             localStorage.setItem('workshop_preferences', JSON.stringify(this.preferences));
+             await this.router.navigate(['/dashboard']);
+           } else {
+@@ -58,6 +76,7 @@ export class LoginComponent {
+           console.error(error);
+         } finally {
+           this.busy = false;
++          this.changeDetector.markForCheck();
+         }
+       }
+     }
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.ts.snapshot" "b/src\\app\\dashboard\\dashboard.component.ts"
+index 1b5f9d9..1ab5b3a 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.ts.snapshot"
++++ "b/src\\app\\dashboard\\dashboard.component.ts"
+@@ -1,7 +1,8 @@
+ import { CommonModule } from '@angular/common';
+-import { Component, OnInit } from '@angular/core';
++import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { TasksService } from '../services/tasks.service';
++import { SessionService } from '../services/session.service';
+ import { getHttpErrorMessage } from '../utils/http-error-message';
+ import { formatTaskLabel } from '../utils/legacy-format';
+ 
+@@ -27,23 +28,34 @@ export class DashboardComponent implements OnInit {
+   loading: any = true;
+   error: any = '';
+ 
+-  constructor(private router: Router, private tasksService: TasksService) {}
++  constructor(
++    private router: Router,
++    private tasksService: TasksService,
++    private session: SessionService,
++    private changeDetector: ChangeDetectorRef
++  ) {}
+ 
+   statusLabel(status: string): string {
+     return STATUS_LABELS[(status || '').toUpperCase()] || status;
+   }
+ 
+   async ngOnInit(): Promise<void> {
+-    const token = localStorage.getItem('workshop_token');
+-    this.user = JSON.parse(localStorage.getItem('workshop_user') || '{}');
+-    if (!token) {
+-      await this.router.navigate(['/login']);
+-      return;
+-    }
+     try {
+-      const tasks = await this.tasksService.getTasks(this.user.username || '', token);
++      const session = this.session.read();
++      if (!session) {
++        await this.router.navigate(['/login']);
++        return;
++      }
++      this.user = session.user;
++      const tasks = await this.tasksService.getTasks(this.user.username || '', session.token);
++      if (!Array.isArray(tasks)) {
++        throw new Error('La respuesta de tareas no es un arreglo valido.');
++      }
+       const tmp: any[] = [];
+       for (let i = 0; i < tasks.length; i++) {
++        if (typeof tasks[i]?.status !== 'string') {
++          throw new Error('La respuesta de tareas contiene un estado no valido.');
++        }
+         if (tasks[i].status !== 'ARCHIVED') {
+           tasks[i].label = formatTaskLabel(tasks[i]);
+           tmp.push(tasks[i]);
+@@ -52,16 +64,22 @@ export class DashboardComponent implements OnInit {
+       tmp.sort((a: any, b: any) => a.priority > b.priority ? -1 : 1);
+       this.tasks = tasks;
+       this.visibleTasks = tmp;
+-      this.loading = false;
+     } catch (error: unknown) {
+       this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cargar el dashboard');
++    } finally {
+       this.loading = false;
++      this.changeDetector.markForCheck();
+     }
+   }
+ 
+   async logout(): Promise<void> {
+-    localStorage.removeItem('workshop_token');
+-    localStorage.removeItem('workshop_user');
+-    await this.router.navigate(['/login']);
++    try {
++      this.session.clear();
++      await this.router.navigate(['/login']);
++    } catch (error: unknown) {
++      this.error = getHttpErrorMessage(error, 'detail', 'No se pudo cerrar la sesion');
++      this.loading = false;
++      this.changeDetector.markForCheck();
++    }
+   }
+ }
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.spec.ts.snapshot" "b/src\\app\\login\\login.component.spec.ts"
+index 22cf3fd..00827ab 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\login\\login.component.spec.ts.snapshot"
++++ "b/src\\app\\login\\login.component.spec.ts"
+@@ -1,8 +1,10 @@
+ import '@angular/compiler';
+ import { HttpErrorResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { AuthService } from '../services/auth.service';
++import { SessionService } from '../services/session.service';
+ import { LoginComponent } from './login.component';
+ 
+ class MemoryStorage {
+@@ -27,18 +29,25 @@ class MemoryStorage {
+ 
+ describe('LoginComponent characterization', () => {
+   let storage: MemoryStorage;
++  let persistent: MemoryStorage;
+   let router: Router;
+   let navigate: ReturnType<typeof vi.fn>;
+   let authService: AuthService;
+   let login: ReturnType<typeof vi.fn>;
++  let markForCheck: ReturnType<typeof vi.fn>;
++  let changeDetector: ChangeDetectorRef;
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+-    vi.stubGlobal('localStorage', storage);
++    persistent = new MemoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', storage);
+     navigate = vi.fn().mockResolvedValue(true);
+     router = { navigate } as unknown as Router;
+     login = vi.fn();
+     authService = { login } as unknown as AuthService;
++    markForCheck = vi.fn();
++    changeDetector = { markForCheck } as unknown as ChangeDetectorRef;
+     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+   });
+ 
+@@ -50,7 +59,7 @@ describe('LoginComponent characterization', () => {
+   it('sends the documented login request and stores the successful session', async () => {
+     const user = { username: 'student', displayName: 'Student' };
+     login.mockResolvedValue({ token: 'test-token', user });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'Workshop123!';
+ 
+@@ -63,13 +72,13 @@ describe('LoginComponent characterization', () => {
+     });
+     expect(storage.getItem('workshop_token')).toBe('test-token');
+     expect(storage.getItem('workshop_user')).toBe(JSON.stringify(user));
+-    expect(storage.getItem('workshop_preferences')).toBe(JSON.stringify(component.preferences));
++    expect(persistent.getItem('workshop_preferences')).toBe(JSON.stringify(component.preferences));
+     expect(navigate).toHaveBeenCalledWith(['/dashboard']);
+     expect(component.busy).toBe(false);
+   });
+ 
+   it('does not send a request when username or password is blank', async () => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = '   ';
+     component.password = 'password';
+     await component.login();
+@@ -85,7 +94,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it('reports a response without token and does not navigate', async () => {
+     login.mockResolvedValue({ user: { username: 'student' } });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+ 
+@@ -102,7 +111,7 @@ describe('LoginComponent characterization', () => {
+       status: 401,
+       statusText: 'Unauthorized'
+     }));
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'bad';
+ 
+@@ -114,7 +123,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('falls back to the request message and then to the generic error', async () => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'bad';
+     login.mockRejectedValueOnce(new Error('Request failed'));
+@@ -128,7 +137,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty username %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = value;
+     component.password = 'password';
+     await component.login();
+@@ -139,7 +148,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty password %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = value;
+     await component.login();
+@@ -151,7 +160,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it.each([null, {}, { token: '' }, { token: null }])('handles a missing token: %j', async response => {
+     login.mockResolvedValue(response);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -165,7 +174,7 @@ describe('LoginComponent characterization', () => {
+     storage.setItem('workshop_token', 'existing-token');
+     const error = new HttpErrorResponse({ status, error: { message: 'Rejected' } });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -185,7 +194,7 @@ describe('LoginComponent characterization', () => {
+         : { type: cause }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -200,7 +209,7 @@ describe('LoginComponent characterization', () => {
+       error: { error: new SyntaxError('Invalid JSON'), text: '{' }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -212,7 +221,7 @@ describe('LoginComponent characterization', () => {
+   it('reports a storage write error instead of navigating', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     vi.spyOn(storage, 'setItem').mockImplementation(() => { throw new Error('Storage unavailable'); });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -224,7 +233,7 @@ describe('LoginComponent characterization', () => {
+   it('reports navigation rejection and restores the busy state', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     navigate.mockRejectedValue(new Error('Navigation failed'));
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -234,20 +243,60 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('logs invalid preferences and retains defaults', () => {
+-    storage.setItem('workshop_preferences', '{');
++    persistent.setItem('workshop_preferences', '{');
+     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     expect(log).toHaveBeenCalledWith('Preferences could not be loaded', expect.any(SyntaxError));
+     expect(component.preferences).toEqual({ theme: 'light', showTips: true, compact: false });
+   });
+ 
++  it('H-01: reports failure to remove legacy credentials during initialization', () => {
++    const error = new Error('Cleanup unavailable');
++    vi.spyOn(persistent, 'removeItem').mockImplementation(() => { throw error; });
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
++    expect(component.message).toBe('Cleanup unavailable');
++    expect(console.error).toHaveBeenCalledWith(error);
++    expect(navigate).not.toHaveBeenCalled();
++  });
++
+   it('BUG-01: rejects an unexpected login body instead of persisting an invalid session', async () => {
+     login.mockResolvedValue({ token: 'test-token' });
+-    const component = new LoginComponent(router, authService);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+     expect(navigate).not.toHaveBeenCalled();
+     expect(storage.getItem('workshop_token')).toBeNull();
++    expect(component.message).toContain('respuesta de autenticacion');
++    expect(component.busy).toBe(false);
++  });
++
++  it('BUG-05: notifies the login view after an asynchronous rejection', async () => {
++    login.mockResolvedValue({ token: 'test-token' });
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
++    component.username = 'student';
++    component.password = 'password';
++    await component.login();
++    expect(markForCheck).toHaveBeenCalledTimes(1);
++    expect(component.busy).toBe(false);
++  });
++
++  it.each([
++    { token: 42, user: { username: 'student' } },
++    { token: 'test-token', user: null },
++    { token: 'test-token', user: [] },
++    { token: 'test-token', user: {} },
++    { token: 'test-token', user: { username: 42 } },
++    { token: 'test-token', user: { username: 'student', displayName: 42 } }
++  ])('BUG-01: rejects incompatible authentication fields %j', async response => {
++    login.mockResolvedValue(response);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
++    component.username = 'student';
++    component.password = 'password';
++    await component.login();
++    expect(navigate).not.toHaveBeenCalled();
++    expect(storage.getItem('workshop_token')).toBeNull();
++    expect(component.message).toContain('respuesta de autenticacion');
++    expect(component.busy).toBe(false);
+   });
+ });
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts.snapshot" "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+index 8a7bde9..2acef80 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts.snapshot"
++++ "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+@@ -1,8 +1,10 @@
+ import '@angular/compiler';
+ import { HttpErrorResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { TasksService } from '../services/tasks.service';
++import { SessionService } from '../services/session.service';
+ import { DashboardComponent } from './dashboard.component';
+ 
+ class MemoryStorage {
+@@ -27,18 +29,25 @@ class MemoryStorage {
+ 
+ describe('DashboardComponent characterization', () => {
+   let storage: MemoryStorage;
++  let persistent: MemoryStorage;
+   let navigate: ReturnType<typeof vi.fn>;
+   let getTasks: ReturnType<typeof vi.fn>;
+   let component: DashboardComponent;
++  let markForCheck: ReturnType<typeof vi.fn>;
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+-    vi.stubGlobal('localStorage', storage);
++    persistent = new MemoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', storage);
+     navigate = vi.fn().mockResolvedValue(true);
+     getTasks = vi.fn();
++    markForCheck = vi.fn();
+     component = new DashboardComponent(
+       { navigate } as unknown as Router,
+-      { getTasks } as unknown as TasksService
++      { getTasks } as unknown as TasksService,
++      new SessionService(),
++      { markForCheck } as unknown as ChangeDetectorRef
+     );
+   });
+ 
+@@ -73,6 +82,7 @@ describe('DashboardComponent characterization', () => {
+     expect(component.visibleTasks.map(task => task.title)).toEqual(['Normal task', 'Urgent task']);
+     expect(component.visibleTasks[0].label).toBe('NORMAL · STUDENT');
+     expect(component.loading).toBe(false);
++    expect(markForCheck).toHaveBeenCalled();
+   });
+ 
+   it('displays the backend task error and ends loading', async () => {
+@@ -107,13 +117,13 @@ describe('DashboardComponent characterization', () => {
+   it('removes the saved token and user on logout and navigates to login', async () => {
+     storage.setItem('workshop_token', 'test-token');
+     storage.setItem('workshop_user', JSON.stringify({ username: 'student' }));
+-    storage.setItem('workshop_preferences', JSON.stringify({ theme: 'dark' }));
++    persistent.setItem('workshop_preferences', JSON.stringify({ theme: 'dark' }));
+ 
+     await component.logout();
+ 
+     expect(storage.getItem('workshop_token')).toBeNull();
+     expect(storage.getItem('workshop_user')).toBeNull();
+-    expect(storage.getItem('workshop_preferences')).toBe(JSON.stringify({ theme: 'dark' }));
++    expect(persistent.getItem('workshop_preferences')).toBe(JSON.stringify({ theme: 'dark' }));
+     expect(navigate).toHaveBeenCalledWith(['/login']);
+   });
+ 
+@@ -204,12 +214,40 @@ describe('DashboardComponent characterization', () => {
+     await expect(component.ngOnInit()).resolves.toBeUndefined();
+     expect(component.loading).toBe(false);
+     expect(getTasks).not.toHaveBeenCalled();
++    expect(component.error).toBe('Storage unavailable');
+   });
+ 
+-  it('BUG-04: handles an invalid status without a rendering exception', async () => {
++  it('H-01: reports logout storage removal failure without navigating', async () => {
++    vi.spyOn(storage, 'removeItem').mockImplementation(() => { throw new Error('Removal unavailable'); });
++    await expect(component.logout()).resolves.toBeUndefined();
++    expect(component.error).toBe('Removal unavailable');
++    expect(component.loading).toBe(false);
++    expect(navigate).not.toHaveBeenCalled();
++  });
++
++  it('H-01: reports logout navigation rejection', async () => {
++    navigate.mockRejectedValue(new Error('Navigation failed'));
++    await expect(component.logout()).resolves.toBeUndefined();
++    expect(component.error).toBe('Navigation failed');
++    expect(component.loading).toBe(false);
++  });
++
++  it.each([42, null, undefined, {}, []])('BUG-04: rejects invalid status %j before rendering', async status => {
+     storage.setItem('workshop_token', 'test-token');
+-    getTasks.mockResolvedValue([{ status: 42, priority: 'HIGH', owner: 'student' }]);
++    getTasks.mockResolvedValue([{ status, priority: 'HIGH', owner: 'student' }]);
++    await component.ngOnInit();
++    expect(component.error).toContain('estado');
++    expect(component.visibleTasks).toEqual([]);
++    expect(component.loading).toBe(false);
++  });
++
++  it('BUG-05: notifies the view after asynchronous success and failure', async () => {
++    storage.setItem('workshop_token', 'test-token');
++    getTasks.mockResolvedValue([]);
++    await component.ngOnInit();
++    expect(markForCheck).toHaveBeenCalledTimes(1);
++    getTasks.mockRejectedValue(new Error('Unavailable'));
+     await component.ngOnInit();
+-    expect(() => component.statusLabel(component.visibleTasks[0].status)).not.toThrow();
++    expect(markForCheck).toHaveBeenCalledTimes(2);
+   });
+ });
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\auth-tasks-flow.spec.ts.snapshot" "b/src\\app\\auth-tasks-flow.spec.ts"
+index 6830771..c762661 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\src\\app\\auth-tasks-flow.spec.ts.snapshot"
++++ "b/src\\app\\auth-tasks-flow.spec.ts"
+@@ -1,5 +1,6 @@
+ import '@angular/compiler';
+ import { HttpClient, HttpErrorResponse, HttpEvent, HttpRequest, HttpResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { Subject } from 'rxjs';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+@@ -7,9 +8,11 @@ import { DashboardComponent } from './dashboard/dashboard.component';
+ import { LoginComponent } from './login/login.component';
+ import { AuthService } from './services/auth.service';
+ import { TasksService } from './services/tasks.service';
++import { SessionService } from './services/session.service';
+ 
+ describe('Login -> tasks -> logout with real services and an in-memory HTTP transport', () => {
+   let values: Map<string, string>;
++  let preferences: Map<string, string>;
+   let requests: HttpRequest<unknown>[];
+   let replies: Subject<HttpEvent<unknown>>[];
+   let login: LoginComponent;
+@@ -17,12 +20,19 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+   let navigate: ReturnType<typeof vi.fn>;
+   let http: HttpClient;
+   let router: Router;
++  let changeDetector: ChangeDetectorRef;
+ 
+   beforeEach(() => {
+     values = new Map();
++    preferences = new Map();
+     requests = [];
+     replies = [];
+     vi.stubGlobal('localStorage', {
++      getItem: (key: string) => preferences.get(key) ?? null,
++      setItem: (key: string, value: string) => preferences.set(key, String(value)),
++      removeItem: (key: string) => preferences.delete(key)
++    });
++    vi.stubGlobal('sessionStorage', {
+       getItem: (key: string) => values.get(key) ?? null,
+       setItem: (key: string, value: string) => values.set(key, String(value)),
+       removeItem: (key: string) => values.delete(key)
+@@ -37,8 +47,9 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     });
+     navigate = vi.fn().mockResolvedValue(true);
+     router = { navigate } as unknown as Router;
+-    login = new LoginComponent(router, new AuthService(http));
+-    dashboard = new DashboardComponent(router, new TasksService(http));
++    changeDetector = { markForCheck: vi.fn() } as unknown as ChangeDetectorRef;
++    login = new LoginComponent(router, new AuthService(http), new SessionService(), changeDetector);
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService(), changeDetector);
+     login.username = 'student';
+     login.password = 'Workshop123!';
+   });
+@@ -69,7 +80,7 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     expect(navigate).toHaveBeenLastCalledWith(['/dashboard']);
+     expect(values.get('workshop_token')).toBe('test-token');
+ 
+-    dashboard = new DashboardComponent(router, new TasksService(http));
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService(), changeDetector);
+     const loading = dashboard.ngOnInit();
+     expect(dashboard.loading).toBe(true);
+     expect(requests[1].method).toBe('GET');
+@@ -89,11 +100,11 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     expect(dashboard.visibleTasks[0].label).toBe('HIGH · STUDENT');
+     expect(dashboard.statusLabel(dashboard.visibleTasks[0].status)).toBe('Por hacer');
+ 
+-    const preferences = values.get('workshop_preferences');
++    const savedPreferences = preferences.get('workshop_preferences');
+     await dashboard.logout();
+     expect(values.has('workshop_token')).toBe(false);
+     expect(values.has('workshop_user')).toBe(false);
+-    expect(values.get('workshop_preferences')).toBe(preferences);
++    expect(preferences.get('workshop_preferences')).toBe(savedPreferences);
+     expect(navigate).toHaveBeenLastCalledWith(['/login']);
+     await dashboard.ngOnInit();
+     expect(requests).toHaveLength(2);
+diff --git "a/EVIDENCIAS\\implementacion-H-01\\antes\\tests\\browser-flows.mjs.snapshot" "b/tests\\browser-flows.mjs"
+index 625f902..61fae9e 100644
+--- "a/EVIDENCIAS\\implementacion-H-01\\antes\\tests\\browser-flows.mjs.snapshot"
++++ "b/tests\\browser-flows.mjs"
+@@ -1,32 +1,70 @@
+ export async function verifyBrowserFlow(page, baseUrl = 'http://localhost:4317') {
+   await page.goto(`${baseUrl}/login`);
+-  await page.evaluate(() => localStorage.clear());
++  await page.evaluate(() => {
++    localStorage.clear();
++    sessionStorage.clear();
++    localStorage.setItem('workshop_token', 'legacy-token');
++    localStorage.setItem('workshop_user', '{"username":"legacy"}');
++    localStorage.setItem('workshop_preferences', '{"theme":"dark"}');
++  });
+   await page.reload();
++  const assertSession = async (signedIn) => {
++    const state = await page.evaluate(() => ({
++      legacyToken: localStorage.getItem('workshop_token'),
++      legacyUser: localStorage.getItem('workshop_user'),
++      token: sessionStorage.getItem('workshop_token'),
++      user: sessionStorage.getItem('workshop_user'),
++      preferences: JSON.parse(localStorage.getItem('workshop_preferences') || '{}')
++    }));
++    if (state.legacyToken !== null || state.legacyUser !== null
++      || state.token !== (signedIn ? 'test-token' : null)
++      || state.user !== (signedIn ? JSON.stringify({ username: 'student', displayName: 'Student' }) : null)
++      || state.preferences.theme !== 'dark') {
++      throw new Error('H-01: session persistence or preference preservation failed');
++    }
++  };
++  await assertSession(false);
+   await page.route('http://localhost:8080/auth/login', route => route.fulfill({
+     status: 200,
+     contentType: 'application/json',
+     body: JSON.stringify({ token: 'test-token', user: { username: 'student', displayName: 'Student' } })
+   }));
+-  await page.route('http://localhost:8000/api/tasks?owner=student', route => route.fulfill({
++  await page.route('http://localhost:8000/api/tasks?owner=student', route => {
++    if (route.request().headers().authorization !== 'Bearer test-token') {
++      throw new Error('H-01: task request must keep its Bearer header');
++    }
++    return route.fulfill({
+     status: 200,
+     contentType: 'application/json',
+     body: JSON.stringify([{
+       title: 'Requirement', description: 'Browser fixture', status: 'TODO', priority: 'HIGH', owner: 'student'
+     }])
+-  }));
++    });
++  });
+   try {
+     await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill('student');
+     await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('Workshop123!');
+     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+     await page.waitForURL('**/dashboard');
++    await assertSession(true);
++    await page.getByRole('heading', { name: 'Requirement', exact: true })
++      .waitFor({ state: 'visible', timeout: 7000 });
++    await page.reload();
+     await page.getByRole('heading', { name: 'Requirement', exact: true })
+       .waitFor({ state: 'visible', timeout: 7000 });
++    await assertSession(true);
++    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
++    await page.waitForURL('**/login');
++    await assertSession(false);
+   } finally {
+     if (page.url().endsWith('/dashboard')) {
+       await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+       await page.waitForURL('**/login');
+     }
+-    await page.evaluate(() => localStorage.clear());
++    await page.evaluate(() => {
++      localStorage.clear();
++      sessionStorage.clear();
++    });
+     await page.unrouteAll({ behavior: 'wait' });
+   }
+ }
+diff --git "a/src\\app\\services\\session.service.ts" "b/src\\app\\services\\session.service.ts"
+new file mode 100644
+index 0000000..fb2f642
+--- /dev/null
++++ "b/src\\app\\services\\session.service.ts"
+@@ -0,0 +1,48 @@
++import { Injectable } from '@angular/core';
++import { AuthUser } from '../models/auth.models';
++
++const TOKEN_KEY = 'workshop_token';
++const USER_KEY = 'workshop_user';
++
++interface StoredSession {
++  token: string;
++  user: Partial<AuthUser>;
++}
++
++@Injectable({ providedIn: 'root' })
++export class SessionService {
++  initialize(): void {
++    localStorage.removeItem(TOKEN_KEY);
++    localStorage.removeItem(USER_KEY);
++  }
++
++  save(token: string, user: AuthUser): void {
++    this.initialize();
++    sessionStorage.setItem(TOKEN_KEY, token);
++    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
++  }
++
++  read(): StoredSession | null {
++    this.initialize();
++    const token = sessionStorage.getItem(TOKEN_KEY);
++    if (!token) return null;
++
++    const user: unknown = JSON.parse(sessionStorage.getItem(USER_KEY) || '{}');
++    if (!this.isStoredUser(user)) {
++      throw new Error('Los datos de sesion guardados no son validos. Cierre la sesion e ingrese nuevamente.');
++    }
++    return { token, user };
++  }
++
++  clear(): void {
++    sessionStorage.removeItem(TOKEN_KEY);
++    sessionStorage.removeItem(USER_KEY);
++    this.initialize();
++  }
++
++  private isStoredUser(user: unknown): user is Partial<AuthUser> {
++    return typeof user === 'object' && user !== null && !Array.isArray(user)
++      && (!('username' in user) || typeof user.username === 'string')
++      && (!('displayName' in user) || typeof user.displayName === 'string');
++  }
++}
+diff --git "a/src\\app\\services\\session.service.spec.ts" "b/src\\app\\services\\session.service.spec.ts"
+new file mode 100644
+index 0000000..2ae6a9d
+--- /dev/null
++++ "b/src\\app\\services\\session.service.spec.ts"
+@@ -0,0 +1,103 @@
++import '@angular/compiler';
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { SessionService } from './session.service';
++
++function memoryStorage() {
++  const values = new Map<string, string>();
++  return {
++    getItem: vi.fn((key: string) => values.get(key) ?? null),
++    setItem: vi.fn((key: string, value: string) => { values.set(key, String(value)); }),
++    removeItem: vi.fn((key: string) => { values.delete(key); })
++  };
++}
++
++describe('H-01 SessionService', () => {
++  let persistent: ReturnType<typeof memoryStorage>;
++  let temporary: ReturnType<typeof memoryStorage>;
++  let service: SessionService;
++  const user = { username: 'student', displayName: 'Student' };
++
++  beforeEach(() => {
++    persistent = memoryStorage();
++    temporary = memoryStorage();
++    vi.stubGlobal('localStorage', persistent);
++    vi.stubGlobal('sessionStorage', temporary);
++    persistent.setItem('workshop_preferences', '{"theme":"dark"}');
++    service = new SessionService();
++  });
++
++  afterEach(() => vi.unstubAllGlobals());
++
++  it('stores only token/user in sessionStorage and survives a new service instance', () => {
++    service.save('test-token', user);
++    expect(new SessionService().read()).toEqual({ token: 'test-token', user });
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(temporary.getItem('workshop_user')).toBe(JSON.stringify(user));
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('removes legacy credentials on initialization without migrating them', () => {
++    persistent.setItem('workshop_token', 'legacy-token');
++    persistent.setItem('workshop_user', JSON.stringify(user));
++    service.initialize();
++    expect(service.read()).toBeNull();
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('clears both locations on logout without changing preferences', () => {
++    service.save('test-token', user);
++    persistent.setItem('workshop_token', 'legacy-token');
++    persistent.setItem('workshop_user', JSON.stringify(user));
++    service.clear();
++    expect(service.read()).toBeNull();
++    expect(persistent.getItem('workshop_token')).toBeNull();
++    expect(persistent.getItem('workshop_user')).toBeNull();
++    expect(temporary.getItem('workshop_user')).toBeNull();
++    expect(persistent.getItem('workshop_preferences')).toBe('{"theme":"dark"}');
++  });
++
++  it('keeps the existing empty-owner behavior when no user was stored', () => {
++    temporary.setItem('workshop_token', 'test-token');
++    expect(service.read()).toEqual({ token: 'test-token', user: {} });
++  });
++
++  it.each(['{', 'null', '[]', '"student"', '{"username":42}', '{"displayName":42}'])(
++    'rejects corrupt stored user %s instead of returning a success-shaped session', saved => {
++      temporary.setItem('workshop_token', 'test-token');
++      temporary.setItem('workshop_user', saved);
++      expect(() => service.read()).toThrow();
++    }
++  );
++
++  it('accepts the documented optional display name', () => {
++    service.save('test-token', { username: 'student' });
++    expect(service.read()).toEqual({ token: 'test-token', user: { username: 'student' } });
++  });
++
++  it('propagates storage read failures', () => {
++    temporary.getItem.mockImplementation(() => { throw new Error('Read unavailable'); });
++    expect(() => service.read()).toThrow('Read unavailable');
++  });
++
++  it.each(['workshop_token', 'workshop_user'])('propagates failed writes of %s', key => {
++    temporary.setItem.mockImplementation(name => {
++      if (name === key) throw new Error('Write unavailable');
++    });
++    expect(() => service.save('test-token', user)).toThrow('Write unavailable');
++  });
++
++  it('propagates legacy cleanup failures', () => {
++    persistent.removeItem.mockImplementation(() => { throw new Error('Cleanup unavailable'); });
++    expect(() => service.initialize()).toThrow('Cleanup unavailable');
++    expect(() => service.read()).toThrow('Cleanup unavailable');
++    expect(() => service.save('test-token', user)).toThrow('Cleanup unavailable');
++  });
++
++  it('propagates session removal failures', () => {
++    temporary.removeItem.mockImplementation(() => { throw new Error('Removal unavailable'); });
++    expect(() => service.clear()).toThrow('Removal unavailable');
++  });
++});

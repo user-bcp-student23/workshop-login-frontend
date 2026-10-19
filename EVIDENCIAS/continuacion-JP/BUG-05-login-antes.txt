@@ -1,0 +1,70 @@
+
+> workshop-login-frontend@0.1.0 test
+> vitest run src/app/login/login.component.spec.ts -t BUG-05
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+
+ [31m❯[39m src/app/login/login.component.spec.ts [2m([22m[2m39 tests[22m[2m | [22m[31m1 failed[39m[2m | [22m[33m38 skipped[39m[2m)[22m[32m 11[2mms[22m[39m
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22msends the documented login request and stores the successful session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mdoes not send a request when username or password is blank
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mreports a response without token and does not navigate
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mprefers the backend error message and clears busy after a failed request
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mfalls back to the request message and then to the generic error
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty username null without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty username undefined without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty username  without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty username     without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty password null without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty password undefined without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty password  without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mrejects empty password     without HTTP
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles a missing token: null
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles a missing token: {}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles a missing token: {"token":""}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles a missing token: {"token":null}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles HTTP 401 without overwriting an existing session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles HTTP 403 without overwriting an existing session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles HTTP 400 without overwriting an existing session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles HTTP 500 without overwriting an existing session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles HTTP 503 without overwriting an existing session
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles transport failure: network
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles transport failure: cors
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles transport failure: abort
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles transport failure: timeout
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mhandles a JSON parse error even when HTTP status is 200
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mreports a storage write error instead of navigating
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mreports navigation rejection and restores the busy state
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mlogs invalid preferences and retains defaults
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mH-01: reports failure to remove legacy credentials during initialization
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects an unexpected login body instead of persisting an invalid session
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-05: notifies the login view after an asynchronous rejection[39m[32m 9[2mms[22m[39m
+[31m     → expected "spy" to be called 1 times, but got 0 times[39m
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":42,"user":{"username":"student"}}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":null}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":[]}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{}}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":42}}
+   [2m[90m↓[39m[22m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":"student","displayName":42}}
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-05: notifies the login view after an asynchronous rejection
+AssertionError: expected "spy" to be called 1 times, but got 0 times
+ ❯ src/app/login/login.component.spec.ts:280:26
+    278|     component.password = 'password';
+    279|     await component.login();
+    280|     expect(markForCheck).toHaveBeenCalledTimes(1);
+       |                          ^
+    281|     expect(component.busy).toBe(false);
+    282|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[33m38 skipped[39m[90m (39)[39m
+[2m   Start at [22m 17:54:11
+[2m   Duration [22m 1.11s[2m (transform 76ms, setup 0ms, collect 513ms, tests 11ms, environment 0ms, prepare 170ms)[22m
+
+Exit code: 1

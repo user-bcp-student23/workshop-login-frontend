@@ -1,0 +1,38 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.19.1
+2 info using node@v26.9.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\.npmrc
+5 silly config load:file:C:\Users\Usuario\.npmrc
+6 silly config load:file:C:\Users\Usuario\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm ci
+8 verbose argv "ci" "--ignore-scripts" "--logs-dir" "EVIDENCIAS\\continuacion-JP\\npm-logs"
+9 verbose logfile logs-max:10 dir:C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_43_35_620Z-
+10 verbose logfile C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_43_35_620Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4395630592 maxSize:1098907648 maxEntrySize:549453824
+13 silly packumentCache heap:4395630592 maxSize:1098907648 maxEntrySize:549453824
+14 silly idealTree buildDeps
+15 verbose stack Error: EPERM: operation not permitted, unlink 'C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\node_modules\@esbuild\win32-x64\esbuild.exe'
+16 error code EPERM
+17 error syscall unlink
+18 error path C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\node_modules\@esbuild\win32-x64\esbuild.exe
+19 error errno -4048
+20 error [Error: EPERM: operation not permitted, unlink 'C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\node_modules\@esbuild\win32-x64\esbuild.exe'] {
+20 error   errno: -4048,
+20 error   code: 'EPERM',
+20 error   syscall: 'unlink',
+20 error   path: 'C:\\Users\\Usuario\\Documents\\T81438-johan-paucara\\reqflow-workspace\\workshop-login-frontend\\node_modules\\@esbuild\\win32-x64\\esbuild.exe'
+20 error }
+21 error
+21 error The operation was rejected by your operating system.
+21 error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+21 error
+21 error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+22 verbose cwd C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend
+23 verbose os Windows_NT 10.0.26200
+24 verbose node v26.9.0
+25 verbose npm  v11.19.1
+26 verbose exit -4048
+27 verbose code -4048
+28 error A complete log of this run can be found in: C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_43_35_620Z-debug-0.log

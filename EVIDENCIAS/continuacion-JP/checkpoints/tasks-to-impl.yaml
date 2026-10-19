@@ -1,0 +1,19 @@
+plan: "../../../PLAN.md"
+backlog: "../../../HALLAZGOS.md"
+approval: "User approval; blocker extension authorized by JP, 2026-10-19"
+tasks:
+  H01-T1: {status: done, evidence: "../../implementacion-H-01/caracterizacion-antes.txt"}
+  H01-T2: {status: done, evidence: "../../implementacion-H-01/correccion-antes.txt"}
+  H01-T3: {status: done, evidence: "../H-01.diff"}
+  H01-T4: {status: done, evidence: "../suite-cierre.txt", browser: "../navegador-final.txt"}
+  H03-T1: {status: done, evidence: "../H03-caracterizacion-antes.txt"}
+  H03-T2: {status: done, tests: "../../../src/app/login/login-preferences.spec.ts"}
+  H03-T3: {status: done, evidence: "../H-03.diff", reproducibility: "../H03-ci-final.txt"}
+  H03-T4: {status: done, evidence: "../suite-cierre.txt", audit: "../H03-audit-despues.json"}
+blockers:
+  BUG-01: {status: corrected, diff: "../BUG-01.diff"}
+  BUG-02: {status: corrected, diff: "../BUG-02.diff"}
+  BUG-04: {status: corrected, diff: "../BUG-04.diff"}
+  BUG-05: {status: corrected, dashboard_diff: "../BUG-05.diff", login_diff: "../BUG-05-login.diff"}
+functional_validation: PASS
+residual_security_findings: 25

@@ -1,0 +1,323 @@
+
+> workshop-login-frontend@0.1.0 test
+> vitest run src/app/login/login.component.spec.ts src/app/dashboard/dashboard.component.spec.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Usuario/Documents/T81438-johan-paucara/reqflow-workspace/workshop-login-frontend[39m
+
+ [31m❯[39m src/app/dashboard/dashboard.component.spec.ts [2m([22m[2m38 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[32m 25[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mredirects to login without requesting tasks when there is no token[32m 3[2mms[22m[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mrequests tasks with the saved owner and bearer token and processes the array[39m[32m 7[2mms[22m[39m
+[31m     → expected "spy" to be called at least once[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mdisplays the backend task error and ends loading[32m 1[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mfalls back to the request message and generic dashboard error[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mremoves the saved token and user on logout and navigates to login[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task HTTP 401 and preserves the session[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task HTTP 403 and preserves the session[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task HTTP 400 and preserves the session[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task HTTP 500 and preserves the session[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task HTTP 503 and preserves the session[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task transport error: network[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task transport error: cors[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task transport error: abort[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles task transport error: timeout[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mhandles invalid JSON delivered as an Angular parse error[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mreports a processing failure for body null[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mreports a processing failure for body [ null ][32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22maccepts empty or fully archived results: [][32m 1[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22maccepts empty or fully archived results: [ { status: 'ARCHIVED' } ][32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state TODO to Por hacer[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state in_progress to En progreso[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state DONE to Completado[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state COMPLETED to Completado[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state RESUELTO to Resuelto[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state OTHER to OTHER[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mtranslates state  to [32m 0[2mms[22m[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-02: reports an unexpected tasks wrapper instead of a successful empty list[39m[32m 1[2mms[22m[39m
+[31m     → expected '' not to be '' // Object.is equality[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mBUG-03: recovers from invalid saved user {[32m 1[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mBUG-03: recovers from invalid saved user null[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mBUG-03: handles storage read failure without an unhandled initialization rejection[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mH-01: reports logout storage removal failure without navigating[32m 0[2mms[22m[39m
+   [32m✓[39m DashboardComponent characterization[2m > [22mH-01: reports logout navigation rejection[32m 0[2mms[22m[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-04: rejects invalid status 42 before rendering[39m[32m 1[2mms[22m[39m
+[31m     → expected '' to contain 'estado'[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-04: rejects invalid status null before rendering[39m[32m 0[2mms[22m[39m
+[31m     → expected '' to contain 'estado'[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-04: rejects invalid status undefined before rendering[39m[32m 0[2mms[22m[39m
+[31m     → expected '' to contain 'estado'[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-04: rejects invalid status {} before rendering[39m[32m 0[2mms[22m[39m
+[31m     → expected '' to contain 'estado'[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-04: rejects invalid status %j before rendering[39m[32m 1[2mms[22m[39m
+[31m     → expected '' to contain 'estado'[39m
+[31m   [31m×[31m DashboardComponent characterization[2m > [22mBUG-05: notifies the view after asynchronous success and failure[39m[32m 2[2mms[22m[39m
+[31m     → expected "spy" to be called 1 times, but got 0 times[39m
+ [31m❯[39m src/app/login/login.component.spec.ts [2m([22m[2m38 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[32m 28[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22msends the documented login request and stores the successful session[32m 4[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mdoes not send a request when username or password is blank[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mreports a response without token and does not navigate[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mprefers the backend error message and clears busy after a failed request[32m 1[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mfalls back to the request message and then to the generic error[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty username null without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty username undefined without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty username  without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty username     without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty password null without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty password undefined without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty password  without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mrejects empty password     without HTTP[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles a missing token: null[32m 1[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles a missing token: {}[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles a missing token: {"token":""}[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles a missing token: {"token":null}[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles HTTP 401 without overwriting an existing session[32m 1[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles HTTP 403 without overwriting an existing session[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles HTTP 400 without overwriting an existing session[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles HTTP 500 without overwriting an existing session[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles HTTP 503 without overwriting an existing session[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles transport failure: network[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles transport failure: cors[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles transport failure: abort[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles transport failure: timeout[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mhandles a JSON parse error even when HTTP status is 200[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mreports a storage write error instead of navigating[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mreports navigation rejection and restores the busy state[32m 0[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mlogs invalid preferences and retains defaults[32m 1[2mms[22m[39m
+   [32m✓[39m LoginComponent characterization[2m > [22mH-01: reports failure to remove legacy credentials during initialization[32m 0[2mms[22m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects an unexpected login body instead of persisting an invalid session[39m[32m 7[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":42,"user":{"username":"student"}}[39m[32m 1[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":null}[39m[32m 1[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":[]}[39m[32m 1[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{}}[39m[32m 1[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":42}}[39m[32m 0[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m×[31m LoginComponent characterization[2m > [22mBUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":"student","displayName":42}}[39m[32m 0[2mms[22m[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > requests tasks with the saved owner and bearer token and processes the array
+AssertionError: expected "spy" to be called at least once
+ ❯ src/app/dashboard/dashboard.component.spec.ts:83:26
+     81|     expect(component.visibleTasks[0].label).toBe('NORMAL · STUDENT');
+     82|     expect(component.loading).toBe(false);
+     83|     expect(markForCheck).toHaveBeenCalled();
+       |                          ^
+     84|   });
+     85| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-02: reports an unexpected tasks wrapper instead of a successful empty list
+AssertionError: expected '' not to be '' // Object.is equality
+ ❯ src/app/dashboard/dashboard.component.spec.ts:197:33
+    195|     getTasks.mockResolvedValue({ data: [] });
+    196|     await component.ngOnInit();
+    197|     expect(component.error).not.toBe('');
+       |                                 ^
+    198|     expect(component.loading).toBe(false);
+    199|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: rejects invalid status 42 before rendering
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: rejects invalid status null before rendering
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: rejects invalid status undefined before rendering
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: rejects invalid status {} before rendering
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-04: rejects invalid status %j before rendering
+AssertionError: expected '' to contain 'estado'
+
+- Expected
++ Received
+
+- estado
+
+ ❯ src/app/dashboard/dashboard.component.spec.ts:237:29
+    235|     getTasks.mockResolvedValue([{ status, priority: 'HIGH', owner: 'st…
+    236|     await component.ngOnInit();
+    237|     expect(component.error).toContain('estado');
+       |                             ^
+    238|     expect(component.visibleTasks).toEqual([]);
+    239|     expect(component.loading).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  src/app/dashboard/dashboard.component.spec.ts > DashboardComponent characterization > BUG-05: notifies the view after asynchronous success and failure
+AssertionError: expected "spy" to be called 1 times, but got 0 times
+ ❯ src/app/dashboard/dashboard.component.spec.ts:246:26
+    244|     getTasks.mockResolvedValue([]);
+    245|     await component.ngOnInit();
+    246|     expect(markForCheck).toHaveBeenCalledTimes(1);
+       |                          ^
+    247|     getTasks.mockRejectedValue(new Error('Unavailable'));
+    248|     await component.ngOnInit();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects an unexpected login body instead of persisting an invalid session
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/login/login.component.spec.ts:263:26
+    261|     component.password = 'password';
+    262|     await component.login();
+    263|     expect(navigate).not.toHaveBeenCalled();
+       |                          ^
+    264|     expect(storage.getItem('workshop_token')).toBeNull();
+    265|     expect(component.message).toContain('respuesta de autenticacion');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":42,"user":{"username":"student"}}
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":"test-token","user":null}
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":"test-token","user":[]}
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":"test-token","user":{}}
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":42}}
+ FAIL  src/app/login/login.component.spec.ts > LoginComponent characterization > BUG-01: rejects incompatible authentication fields {"token":"test-token","user":{"username":"student","displayName":42}}
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Array [
+        "/dashboard",
+      ],
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/login/login.component.spec.ts:282:26
+    280|     component.password = 'password';
+    281|     await component.login();
+    282|     expect(navigate).not.toHaveBeenCalled();
+       |                          ^
+    283|     expect(storage.getItem('workshop_token')).toBeNull();
+    284|     expect(component.message).toContain('respuesta de autenticacion');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m15 failed[39m[22m[2m | [22m[1m[32m61 passed[39m[22m[90m (76)[39m
+[2m   Start at [22m 17:36:46
+[2m   Duration [22m 824ms[2m (transform 108ms, setup 0ms, collect 702ms, tests 53ms, environment 0ms, prepare 227ms)[22m
+
+Exit code: 1

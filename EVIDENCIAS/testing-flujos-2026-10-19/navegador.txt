@@ -1,0 +1,39 @@
+Fecha: 19/10/2026, sesion de pruebas posterior a 16:54 (hora local).
+Directorio: workshop-login-frontend.
+Inicio: npm start -- --port 4317
+Disponibilidad: Invoke-WebRequest http://localhost:4317 -> StatusCode 200.
+Navegador: herramientas integradas openBrowserPage y runPlaywrightCode.
+Codigo reproducible: tests/browser-flows.mjs, funcion verifyBrowserFlow(page).
+Se ejecuto el cuerpo equivalente de esa funcion mediante runPlaywrightCode.
+No se instalo Playwright en el proyecto ni se contactaron backends reales:
+ambas URLs externas fueron interceptadas con page.route.
+
+Resultado: FAIL, reproducido dos veces.
+Login -> /dashboard: alcanzado.
+Espera de la tarjeta Requirement: fallida.
+Salida real de la herramienta:
+
+locator.waitFor: Timeout 7000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Requirement', exact: true }) to be visible
+
+Primera ejecucion: snapshot en http://localhost:4317/dashboard.
+  Hola, Student
+  Cerrar sesion
+  main sin la tarjeta esperada.
+
+Limpieza comprobada por una llamada posterior:
+{"logoutUrl":"http://localhost:4317/login","session":{"token":null,"user":null}}
+
+Segunda ejecucion: misma espera fallida; el finally completo logout, borro
+el almacenamiento de prueba y elimino las rutas interceptadas.
+Snapshot final de la herramienta: http://localhost:4317/login, formulario visible.
+
+Codigo de salida: no aplica; la herramienta no devuelve un exit code de proceso.
+No se inventa un codigo numerico: el resultado fue un error de Playwright.
+El servidor temporal testing-ui fue detenido con stop_powershell.
+
+Defecto observable: BUG-05, el flujo visible no presenta la tarea esperada.
+La causa raiz no fue aislada. La sincronizacion del renderizado es una hipotesis,
+no un resultado probado. No se modifico codigo productivo ni se aumento la
+espera para convertir el fallo en aprobado.

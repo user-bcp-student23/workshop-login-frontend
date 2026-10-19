@@ -1,0 +1,29 @@
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes-BUG-05-login.snapshot" "b/src\\app\\login\\login.component.ts"
+index 7288a46..f042af5 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes-BUG-05-login.snapshot"
++++ "b/src\\app\\login\\login.component.ts"
+@@ -1,5 +1,5 @@
+ import { CommonModule } from '@angular/common';
+-import { Component } from '@angular/core';
++import { ChangeDetectorRef, Component } from '@angular/core';
+ import { FormsModule } from '@angular/forms';
+ import { Router } from '@angular/router';
+ import merge from 'lodash/merge';
+@@ -24,7 +24,8 @@ export class LoginComponent {
+   constructor(
+     private router: Router,
+     private authService: AuthService,
+-    private session: SessionService
++    private session: SessionService,
++    private changeDetector: ChangeDetectorRef
+   ) {
+     try {
+       this.session.initialize();
+@@ -75,6 +76,7 @@ export class LoginComponent {
+           console.error(error);
+         } finally {
+           this.busy = false;
++          this.changeDetector.markForCheck();
+         }
+       }
+     }

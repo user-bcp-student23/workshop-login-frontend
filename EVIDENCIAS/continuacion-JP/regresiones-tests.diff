@@ -1,0 +1,315 @@
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\login\\login.component.spec.ts.snapshot" "b/src\\app\\login\\login.component.spec.ts"
+index 4783e7a..00827ab 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\login\\login.component.spec.ts.snapshot"
++++ "b/src\\app\\login\\login.component.spec.ts"
+@@ -1,5 +1,6 @@
+ import '@angular/compiler';
+ import { HttpErrorResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { AuthService } from '../services/auth.service';
+@@ -33,6 +34,8 @@ describe('LoginComponent characterization', () => {
+   let navigate: ReturnType<typeof vi.fn>;
+   let authService: AuthService;
+   let login: ReturnType<typeof vi.fn>;
++  let markForCheck: ReturnType<typeof vi.fn>;
++  let changeDetector: ChangeDetectorRef;
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+@@ -43,6 +46,8 @@ describe('LoginComponent characterization', () => {
+     router = { navigate } as unknown as Router;
+     login = vi.fn();
+     authService = { login } as unknown as AuthService;
++    markForCheck = vi.fn();
++    changeDetector = { markForCheck } as unknown as ChangeDetectorRef;
+     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+   });
+ 
+@@ -54,7 +59,7 @@ describe('LoginComponent characterization', () => {
+   it('sends the documented login request and stores the successful session', async () => {
+     const user = { username: 'student', displayName: 'Student' };
+     login.mockResolvedValue({ token: 'test-token', user });
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'Workshop123!';
+ 
+@@ -73,7 +78,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('does not send a request when username or password is blank', async () => {
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = '   ';
+     component.password = 'password';
+     await component.login();
+@@ -89,7 +94,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it('reports a response without token and does not navigate', async () => {
+     login.mockResolvedValue({ user: { username: 'student' } });
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+ 
+@@ -106,7 +111,7 @@ describe('LoginComponent characterization', () => {
+       status: 401,
+       statusText: 'Unauthorized'
+     }));
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'bad';
+ 
+@@ -118,7 +123,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it('falls back to the request message and then to the generic error', async () => {
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'bad';
+     login.mockRejectedValueOnce(new Error('Request failed'));
+@@ -132,7 +137,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty username %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = value;
+     component.password = 'password';
+     await component.login();
+@@ -143,7 +148,7 @@ describe('LoginComponent characterization', () => {
+   });
+ 
+   it.each([null, undefined, '', '   '])('rejects empty password %s without HTTP', async value => {
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = value;
+     await component.login();
+@@ -155,7 +160,7 @@ describe('LoginComponent characterization', () => {
+ 
+   it.each([null, {}, { token: '' }, { token: null }])('handles a missing token: %j', async response => {
+     login.mockResolvedValue(response);
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -169,7 +174,7 @@ describe('LoginComponent characterization', () => {
+     storage.setItem('workshop_token', 'existing-token');
+     const error = new HttpErrorResponse({ status, error: { message: 'Rejected' } });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -189,7 +194,7 @@ describe('LoginComponent characterization', () => {
+         : { type: cause }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -204,7 +209,7 @@ describe('LoginComponent characterization', () => {
+       error: { error: new SyntaxError('Invalid JSON'), text: '{' }
+     });
+     login.mockRejectedValue(error);
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -216,7 +221,7 @@ describe('LoginComponent characterization', () => {
+   it('reports a storage write error instead of navigating', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     vi.spyOn(storage, 'setItem').mockImplementation(() => { throw new Error('Storage unavailable'); });
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -228,7 +233,7 @@ describe('LoginComponent characterization', () => {
+   it('reports navigation rejection and restores the busy state', async () => {
+     login.mockResolvedValue({ token: 'test-token', user: { username: 'student' } });
+     navigate.mockRejectedValue(new Error('Navigation failed'));
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+@@ -240,7 +245,7 @@ describe('LoginComponent characterization', () => {
+   it('logs invalid preferences and retains defaults', () => {
+     persistent.setItem('workshop_preferences', '{');
+     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     expect(log).toHaveBeenCalledWith('Preferences could not be loaded', expect.any(SyntaxError));
+     expect(component.preferences).toEqual({ theme: 'light', showTips: true, compact: false });
+   });
+@@ -248,7 +253,7 @@ describe('LoginComponent characterization', () => {
+   it('H-01: reports failure to remove legacy credentials during initialization', () => {
+     const error = new Error('Cleanup unavailable');
+     vi.spyOn(persistent, 'removeItem').mockImplementation(() => { throw error; });
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     expect(component.message).toBe('Cleanup unavailable');
+     expect(console.error).toHaveBeenCalledWith(error);
+     expect(navigate).not.toHaveBeenCalled();
+@@ -256,11 +261,42 @@ describe('LoginComponent characterization', () => {
+ 
+   it('BUG-01: rejects an unexpected login body instead of persisting an invalid session', async () => {
+     login.mockResolvedValue({ token: 'test-token' });
+-    const component = new LoginComponent(router, authService, new SessionService());
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
+     component.username = 'student';
+     component.password = 'password';
+     await component.login();
+     expect(navigate).not.toHaveBeenCalled();
+     expect(storage.getItem('workshop_token')).toBeNull();
++    expect(component.message).toContain('respuesta de autenticacion');
++    expect(component.busy).toBe(false);
++  });
++
++  it('BUG-05: notifies the login view after an asynchronous rejection', async () => {
++    login.mockResolvedValue({ token: 'test-token' });
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
++    component.username = 'student';
++    component.password = 'password';
++    await component.login();
++    expect(markForCheck).toHaveBeenCalledTimes(1);
++    expect(component.busy).toBe(false);
++  });
++
++  it.each([
++    { token: 42, user: { username: 'student' } },
++    { token: 'test-token', user: null },
++    { token: 'test-token', user: [] },
++    { token: 'test-token', user: {} },
++    { token: 'test-token', user: { username: 42 } },
++    { token: 'test-token', user: { username: 'student', displayName: 42 } }
++  ])('BUG-01: rejects incompatible authentication fields %j', async response => {
++    login.mockResolvedValue(response);
++    const component = new LoginComponent(router, authService, new SessionService(), changeDetector);
++    component.username = 'student';
++    component.password = 'password';
++    await component.login();
++    expect(navigate).not.toHaveBeenCalled();
++    expect(storage.getItem('workshop_token')).toBeNull();
++    expect(component.message).toContain('respuesta de autenticacion');
++    expect(component.busy).toBe(false);
+   });
+ });
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts.snapshot" "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+index 309cadf..2acef80 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\dashboard\\dashboard.component.spec.ts.snapshot"
++++ "b/src\\app\\dashboard\\dashboard.component.spec.ts"
+@@ -1,5 +1,6 @@
+ import '@angular/compiler';
+ import { HttpErrorResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ import { TasksService } from '../services/tasks.service';
+@@ -32,6 +33,7 @@ describe('DashboardComponent characterization', () => {
+   let navigate: ReturnType<typeof vi.fn>;
+   let getTasks: ReturnType<typeof vi.fn>;
+   let component: DashboardComponent;
++  let markForCheck: ReturnType<typeof vi.fn>;
+ 
+   beforeEach(() => {
+     storage = new MemoryStorage();
+@@ -40,10 +42,12 @@ describe('DashboardComponent characterization', () => {
+     vi.stubGlobal('sessionStorage', storage);
+     navigate = vi.fn().mockResolvedValue(true);
+     getTasks = vi.fn();
++    markForCheck = vi.fn();
+     component = new DashboardComponent(
+       { navigate } as unknown as Router,
+       { getTasks } as unknown as TasksService,
+-      new SessionService()
++      new SessionService(),
++      { markForCheck } as unknown as ChangeDetectorRef
+     );
+   });
+ 
+@@ -78,6 +82,7 @@ describe('DashboardComponent characterization', () => {
+     expect(component.visibleTasks.map(task => task.title)).toEqual(['Normal task', 'Urgent task']);
+     expect(component.visibleTasks[0].label).toBe('NORMAL · STUDENT');
+     expect(component.loading).toBe(false);
++    expect(markForCheck).toHaveBeenCalled();
+   });
+ 
+   it('displays the backend task error and ends loading', async () => {
+@@ -227,10 +232,22 @@ describe('DashboardComponent characterization', () => {
+     expect(component.loading).toBe(false);
+   });
+ 
+-  it('BUG-04: handles an invalid status without a rendering exception', async () => {
++  it.each([42, null, undefined, {}, []])('BUG-04: rejects invalid status %j before rendering', async status => {
+     storage.setItem('workshop_token', 'test-token');
+-    getTasks.mockResolvedValue([{ status: 42, priority: 'HIGH', owner: 'student' }]);
++    getTasks.mockResolvedValue([{ status, priority: 'HIGH', owner: 'student' }]);
+     await component.ngOnInit();
+-    expect(() => component.statusLabel(component.visibleTasks[0].status)).not.toThrow();
++    expect(component.error).toContain('estado');
++    expect(component.visibleTasks).toEqual([]);
++    expect(component.loading).toBe(false);
++  });
++
++  it('BUG-05: notifies the view after asynchronous success and failure', async () => {
++    storage.setItem('workshop_token', 'test-token');
++    getTasks.mockResolvedValue([]);
++    await component.ngOnInit();
++    expect(markForCheck).toHaveBeenCalledTimes(1);
++    getTasks.mockRejectedValue(new Error('Unavailable'));
++    await component.ngOnInit();
++    expect(markForCheck).toHaveBeenCalledTimes(2);
+   });
+ });
+diff --git "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\auth-tasks-flow.spec.ts.snapshot" "b/src\\app\\auth-tasks-flow.spec.ts"
+index f71b2cc..c762661 100644
+--- "a/EVIDENCIAS\\continuacion-JP\\antes\\src\\app\\auth-tasks-flow.spec.ts.snapshot"
++++ "b/src\\app\\auth-tasks-flow.spec.ts"
+@@ -1,5 +1,6 @@
+ import '@angular/compiler';
+ import { HttpClient, HttpErrorResponse, HttpEvent, HttpRequest, HttpResponse } from '@angular/common/http';
++import { ChangeDetectorRef } from '@angular/core';
+ import { Router } from '@angular/router';
+ import { Subject } from 'rxjs';
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+@@ -19,6 +20,7 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+   let navigate: ReturnType<typeof vi.fn>;
+   let http: HttpClient;
+   let router: Router;
++  let changeDetector: ChangeDetectorRef;
+ 
+   beforeEach(() => {
+     values = new Map();
+@@ -45,8 +47,9 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     });
+     navigate = vi.fn().mockResolvedValue(true);
+     router = { navigate } as unknown as Router;
+-    login = new LoginComponent(router, new AuthService(http), new SessionService());
+-    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService());
++    changeDetector = { markForCheck: vi.fn() } as unknown as ChangeDetectorRef;
++    login = new LoginComponent(router, new AuthService(http), new SessionService(), changeDetector);
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService(), changeDetector);
+     login.username = 'student';
+     login.password = 'Workshop123!';
+   });
+@@ -77,7 +80,7 @@ describe('Login -> tasks -> logout with real services and an in-memory HTTP tran
+     expect(navigate).toHaveBeenLastCalledWith(['/dashboard']);
+     expect(values.get('workshop_token')).toBe('test-token');
+ 
+-    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService());
++    dashboard = new DashboardComponent(router, new TasksService(http), new SessionService(), changeDetector);
+     const loading = dashboard.ngOnInit();
+     expect(dashboard.loading).toBe(true);
+     expect(requests[1].method).toBe('GET');

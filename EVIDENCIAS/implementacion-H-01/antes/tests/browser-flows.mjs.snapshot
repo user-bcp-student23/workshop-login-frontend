@@ -1,0 +1,32 @@
+export async function verifyBrowserFlow(page, baseUrl = 'http://localhost:4317') {
+  await page.goto(`${baseUrl}/login`);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.route('http://localhost:8080/auth/login', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ token: 'test-token', user: { username: 'student', displayName: 'Student' } })
+  }));
+  await page.route('http://localhost:8000/api/tasks?owner=student', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify([{
+      title: 'Requirement', description: 'Browser fixture', status: 'TODO', priority: 'HIGH', owner: 'student'
+    }])
+  }));
+  try {
+    await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill('student');
+    await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('Workshop123!');
+    await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+    await page.waitForURL('**/dashboard');
+    await page.getByRole('heading', { name: 'Requirement', exact: true })
+      .waitFor({ state: 'visible', timeout: 7000 });
+  } finally {
+    if (page.url().endsWith('/dashboard')) {
+      await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+      await page.waitForURL('**/login');
+    }
+    await page.evaluate(() => localStorage.clear());
+    await page.unrouteAll({ behavior: 'wait' });
+  }
+}

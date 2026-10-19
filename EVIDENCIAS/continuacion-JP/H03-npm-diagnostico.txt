@@ -1,0 +1,43 @@
+npm verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+npm info using npm@11.19.1
+npm info using node@v26.9.0
+npm verbose title npm install
+npm verbose argv "install" "--package-lock-only" "--ignore-scripts" "--logs-dir" "EVIDENCIAS\\continuacion-JP\\npm-logs" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-
+npm verbose logfile C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-debug-0.log
+npm http cache https://registry.npmjs.org/lodash 16ms (cache hit)
+npm http cache https://registry.npmjs.org/vitest 13ms (cache hit)
+npm http cache https://registry.npmjs.org/@edge-runtime%2fvm 8ms (cache hit)
+npm http cache https://registry.npmjs.org/@opentelemetry%2fapi 8ms (cache hit)
+npm http cache https://registry.npmjs.org/@types%2fnode 26ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fbrowser-playwright 11ms (cache hit)
+npm http cache https://registry.npmjs.org/playwright 34ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fbrowser-preview 11ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fbrowser-webdriverio 6ms (cache hit)
+npm http cache https://registry.npmjs.org/vitest 11ms (cache hit)
+npm http cache https://registry.npmjs.org/webdriverio 23ms (cache hit)
+npm http cache https://registry.npmjs.org/puppeteer-core 10ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fcoverage-istanbul 8ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fcoverage-v8 8ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fbrowser 8ms (cache hit)
+npm http cache https://registry.npmjs.org/@vitest%2fui 9ms (cache hit)
+npm http cache https://registry.npmjs.org/happy-dom 10ms (cache hit)
+npm http cache https://registry.npmjs.org/jsdom 9ms (cache hit)
+npm http cache https://registry.npmjs.org/canvas 8ms (cache hit)
+npm verbose stack TypeError: Cannot read properties of null (reading 'children')
+npm verbose stack     at new PlaceDep (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\place-dep.js:300:32)
+npm verbose stack     at #buildDepStep (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\build-ideal-tree.js:1016:18)
+npm verbose stack     at async Arborist.buildIdealTree (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\build-ideal-tree.js:180:7)
+npm verbose stack     at async Arborist.reify (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:118:5)
+npm verbose stack     at async Install.exec (C:\Program Files\nodejs\node_modules\npm\lib\commands\install.js:158:5)
+npm verbose stack     at async Npm.exec (C:\Program Files\nodejs\node_modules\npm\lib\npm.js:193:9)
+npm verbose stack     at async module.exports (C:\Program Files\nodejs\node_modules\npm\lib\cli\entry.js:67:5)
+npm error Cannot read properties of null (reading 'children')
+npm verbose cwd C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend
+npm verbose os Windows_NT 10.0.26200
+npm verbose node v26.9.0
+npm verbose npm  v11.19.1
+npm verbose exit 1
+npm verbose code 1
+npm error A complete log of this run can be found in: C:\Users\Usuario\Documents\T81438-johan-paucara\reqflow-workspace\workshop-login-frontend\EVIDENCIAS\continuacion-JP\npm-logs\2026-10-19T22_41_18_490Z-debug-0.log
+Exit code: 1
